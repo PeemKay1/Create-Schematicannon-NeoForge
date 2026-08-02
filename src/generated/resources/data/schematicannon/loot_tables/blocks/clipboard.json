@@ -1,4 +1,4 @@
 {
   "type": "minecraft:block",
-  "random_sequence": "create:blocks/clipboard"
+  "random_sequence": "schematicannon:blocks/clipboard"
 }

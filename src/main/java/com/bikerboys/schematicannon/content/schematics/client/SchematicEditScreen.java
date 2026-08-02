@@ -3,6 +3,7 @@ package com.bikerboys.schematicannon.content.schematics.client;
 import java.util.List;
 
 import com.bikerboys.schematicannon.AllItems;
+import com.bikerboys.schematicannon.AllDataComponents;
 import com.bikerboys.schematicannon.SchematicannonClient;
 import com.bikerboys.schematicannon.foundation.gui.AllGuiTextures;
 import com.bikerboys.schematicannon.foundation.gui.AllIcons;
@@ -12,9 +13,9 @@ import com.bikerboys.schematicannon.foundation.gui.widget.ScrollInput;
 import com.bikerboys.schematicannon.foundation.gui.widget.SelectionScrollInput;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 
-import net.createmod.catnip.gui.AbstractSimiScreen;
-import net.createmod.catnip.gui.element.GuiGameElement;
-import net.minecraft.client.gui.GuiGraphics;
+import com.bikerboys.schematicannon.foundation.gui.AbstractSimiScreen;
+import com.bikerboys.schematicannon.foundation.gui.GuiGameElement;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.NbtUtils;
@@ -81,7 +82,6 @@ public class SchematicEditScreen extends AbstractSimiScreen {
 			widget.setBordered(false);
 			widget.setTextColor(0xFFFFFF);
 			widget.setFocused(false);
-			widget.mouseClicked(0, 0, 0);
 			widget.setFilter(s -> {
 				if (s.isEmpty() || s.equals("-"))
 					return true;
@@ -151,15 +151,15 @@ public class SchematicEditScreen extends AbstractSimiScreen {
 	}
 
 	@Override
-	protected void renderWindow(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+	protected void renderWindow(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
 		int x = guiLeft;
 		int y = guiTop;
 
 		background.render(graphics, x, y);
 		String title = handler.getCurrentSchematicName();
-		graphics.drawString(font, title, x + (background.getWidth() - 8 - font.width(title)) / 2, y + 4, 0x505050, false);
+		graphics.text(font, title, x + (background.getWidth() - 8 - font.width(title)) / 2, y + 4, 0x505050, false);
 
-		GuiGameElement.of(AllItems.SCHEMATIC.asStack())
+		GuiGameElement.of(new ItemStack(AllItems.SCHEMATIC.get()))
 			.<GuiGameElement.GuiRenderBuilder>at(x + background.getWidth() + 6, y + background.getHeight() - 40, -200)
 			.scale(3)
 			.render(graphics);
@@ -183,10 +183,8 @@ public class SchematicEditScreen extends AbstractSimiScreen {
 		if (validCoords && newLocation != null) {
 			ItemStack item = handler.getActiveSchematicItem();
 			if (item != null) {
-				item.getTag()
-					.putBoolean("Deployed", true);
-				item.getTag()
-					.put("Anchor", NbtUtils.writeBlockPos(newLocation));
+				item.set(AllDataComponents.SCHEMATIC_DEPLOYED, true);
+				item.set(AllDataComponents.SCHEMATIC_ANCHOR, newLocation);
 			}
 
 			handler.getTransformation()

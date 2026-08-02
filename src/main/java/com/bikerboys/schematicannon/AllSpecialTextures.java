@@ -1,9 +1,8 @@
 package com.bikerboys.schematicannon;
 
-import net.createmod.catnip.render.BindableTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public enum AllSpecialTextures implements BindableTexture {
+public enum AllSpecialTextures {
 
 	CHECKERED("checkerboard.png"),
 	THIN_CHECKERED("thin_checkerboard.png"),
@@ -14,13 +13,13 @@ public enum AllSpecialTextures implements BindableTexture {
 	;
 
 	public static final String ASSET_PATH = "textures/special/";
-	private final ResourceLocation location;
+	private final Identifier location;
 
 	AllSpecialTextures(String filename) {
 		location = Schematicannon.asResource(ASSET_PATH + filename);
 	}
 
-	public ResourceLocation getLocation() {
+	public Identifier getLocation() {
 		return location;
 	}
 

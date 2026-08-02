@@ -1,35 +1,26 @@
 package com.bikerboys.schematicannon;
 
 import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonMenu;
-import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonScreen;
 import com.bikerboys.schematicannon.content.schematics.table.SchematicTableMenu;
-import com.bikerboys.schematicannon.content.schematics.table.SchematicTableScreen;
-import com.tterrag.registrate.builders.MenuBuilder.ForgeMenuFactory;
-import com.tterrag.registrate.builders.MenuBuilder.ScreenFactory;
-import com.tterrag.registrate.util.entry.MenuEntry;
-import com.tterrag.registrate.util.nullness.NonNullSupplier;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.MenuType;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.MenuAccess;
-import net.minecraft.world.inventory.AbstractContainerMenu;
+public final class AllMenuTypes {
+    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, Schematicannon.ID);
 
-public class AllMenuTypes {
+    public static final DeferredHolder<MenuType<?>, MenuType<SchematicTableMenu>> SCHEMATIC_TABLE = MENUS.register(
+            "schematic_table", () -> IMenuTypeExtension.create(SchematicTableMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<SchematicannonMenu>> SCHEMATICANNON = MENUS.register(
+            "schematicannon", () -> IMenuTypeExtension.create(SchematicannonMenu::new));
 
-	public static final MenuEntry<SchematicTableMenu> SCHEMATIC_TABLE =
-		register("schematic_table", SchematicTableMenu::new, () -> SchematicTableScreen::new);
+    public static void register(IEventBus eventBus) {
+        MENUS.register(eventBus);
+    }
 
-	public static final MenuEntry<SchematicannonMenu> SCHEMATICANNON =
-		register("schematicannon", SchematicannonMenu::new, () -> SchematicannonScreen::new);
-
-
-	private static <C extends AbstractContainerMenu, S extends Screen & MenuAccess<C>> MenuEntry<C> register(
-		String name, ForgeMenuFactory<C> factory, NonNullSupplier<ScreenFactory<C, S>> screenFactory) {
-		return Schematicannon.registrate()
-			.menu(name, factory, screenFactory)
-			.register();
-	}
-
-	public static void register() {
-	}
-
+    private AllMenuTypes() {
+    }
 }

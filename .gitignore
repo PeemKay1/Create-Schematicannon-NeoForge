@@ -1,6 +1,8 @@
 ## Based on GitHub's Eclipse .gitignore
 
 run/
+logs/
+runclient-test*.log
 .gradle/
 build/
 gradle-app.setting

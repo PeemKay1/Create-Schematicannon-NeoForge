@@ -7,8 +7,8 @@ import com.bikerboys.schematicannon.foundation.gui.widget.ScrollInput;
 import com.bikerboys.schematicannon.foundation.gui.widget.SelectionScrollInput;
 import com.bikerboys.schematicannon.foundation.gui.widget.TooltipArea;
 
-import net.createmod.catnip.data.Couple;
-import net.createmod.catnip.data.Pair;
+import com.bikerboys.schematicannon.foundation.utility.Couple;
+import org.apache.commons.lang3.tuple.Pair;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.CommonComponents;
@@ -80,7 +80,6 @@ public class ModularGuiLineBuilder {
 		input.setBordered(false);
 		input.setTextColor(0xffffff);
 		input.setFocused(false);
-		input.mouseClicked(0, 0, 0);
 		TooltipArea tooltipArea = new TooltipArea(this.x + x, y - 4, width, 18);
 		inputTransform.accept(input, tooltipArea);
 		target.add(Pair.of(input, dataKey));

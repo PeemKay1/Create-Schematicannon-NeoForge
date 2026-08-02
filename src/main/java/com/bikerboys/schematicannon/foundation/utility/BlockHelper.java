@@ -12,34 +12,31 @@ import com.bikerboys.schematicannon.api.schematic.nbt.SafeNbtWriterRegistry.Safe
 import com.bikerboys.schematicannon.api.schematic.state.SchematicStateFilter;
 import com.bikerboys.schematicannon.api.schematic.state.SchematicStateFilterRegistry;
 import com.bikerboys.schematicannon.api.schematic.state.SchematicStateFilterRegistry.StateFilter;
+import com.bikerboys.schematicannon.foundation.NBTProcessors;
 import com.bikerboys.schematicannon.foundation.blockEntity.IMergeableBE;
 import com.bikerboys.schematicannon.foundation.blockEntity.IMultiBlockEntityContainer;
 
-import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.level.BlockEvent;
-
-import net.createmod.catnip.nbt.NBTProcessors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseRailBlock;
 import net.minecraft.world.level.block.BedBlock;
@@ -56,7 +53,13 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.PalettedContainerFactory;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 public class BlockHelper {
 	private static final List<IntegerProperty> COUNT_STATES = List.of(
@@ -136,7 +139,7 @@ public class BlockHelper {
 
 		{
 			// Try held Item first
-			int preferredSlot = player.getInventory().selected;
+			int preferredSlot = player.getInventory().getSelectedSlot();
 			ItemStack itemstack = player.getInventory()
 				.getItem(preferredSlot);
 			int count = itemstack.getCount();
@@ -198,34 +201,37 @@ public class BlockHelper {
 		FluidState fluidState = world.getFluidState(pos);
 		BlockState state = world.getBlockState(pos);
 
-		if (world.random.nextFloat() < effectChance)
+		if (world.getRandom().nextFloat() < effectChance)
 			world.levelEvent(2001, pos, Block.getId(state));
 		BlockEntity blockEntity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
 
 		if (player != null) {
-			BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(world, pos, state, player);
-			MinecraftForge.EVENT_BUS.post(event);
+			BreakBlockEvent event = new BreakBlockEvent(world, pos, state, player);
+			NeoForge.EVENT_BUS.post(event);
 			if (event.isCanceled())
 				return;
 
-			if (event.getExpToDrop() > 0 && world instanceof ServerLevel)
+			int experience = state.getExpDrop(world, pos, blockEntity, player, usedTool);
+			if (experience > 0 && world instanceof ServerLevel)
 				state.getBlock()
-					.popExperience((ServerLevel) world, pos, event.getExpToDrop());
+					.popExperience((ServerLevel) world, pos, experience);
 
 			usedTool.mineBlock(world, state, pos, player);
 			player.awardStat(Stats.BLOCK_MINED.get(state.getBlock()));
 		}
 
-		if (world instanceof ServerLevel && world.getGameRules()
-			.getBoolean(GameRules.RULE_DOBLOCKDROPS) && !world.restoringBlockSnapshots
+		if (world instanceof ServerLevel serverLevel && serverLevel.getGameRules()
+			.get(GameRules.BLOCK_DROPS) && !world.restoringBlockSnapshots
 			&& (player == null || !player.isCreative())) {
-			for (ItemStack itemStack : Block.getDrops(state, (ServerLevel) world, pos, blockEntity, player, usedTool))
+			for (ItemStack itemStack : Block.getDrops(state, serverLevel, pos, blockEntity, player, usedTool))
 				droppedItemCallback.accept(itemStack);
 
 			// Simulating IceBlock#playerDestroy. Not calling method directly as
 			// it would roll the loot table (or crash if the player is null)
-			if (state.getBlock() instanceof IceBlock && usedTool.getEnchantmentLevel(Enchantments.SILK_TOUCH) == 0) {
-				if (!world.dimensionType().ultraWarm()) {
+			if (state.getBlock() instanceof IceBlock
+				&& EnchantmentHelper.getItemEnchantmentLevel(
+					world.holderLookup(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH), usedTool) == 0) {
+				if (!world.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos)) {
 					BlockState below = world.getBlockState(pos.below());
 					if (below.blocksMotion() || below.liquid()) {
 						fluidState = IceBlock.meltsInto().getFluidState();
@@ -233,7 +239,7 @@ public class BlockHelper {
 				}
 			}
 
-			state.spawnAfterBreak((ServerLevel) world, pos, ItemStack.EMPTY, true);
+			state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
 		}
 
 		world.setBlockAndUpdate(pos, fluidState.createLegacyBlock());
@@ -255,18 +261,17 @@ public class BlockHelper {
 		int idx = chunk.getSectionIndex(target.getY());
 		LevelChunkSection chunksection = chunk.getSection(idx);
 		if (chunksection == null) {
-			chunksection = new LevelChunkSection(world.registryAccess()
-				.registryOrThrow(Registries.BIOME));
+			chunksection = new LevelChunkSection(PalettedContainerFactory.create(world.registryAccess()));
 			chunk.getSections()[idx] = chunksection;
 		}
 		BlockState old = chunksection.setBlockState(SectionPos.sectionRelative(target.getX()),
 			SectionPos.sectionRelative(target.getY()), SectionPos.sectionRelative(target.getZ()), state);
-		chunk.setUnsaved(true);
+		chunk.markUnsaved();
 		world.markAndNotifyBlock(target, chunk, old, state, 82, 512);
 
 		world.setBlock(target, state, 82);
 		world.neighborChanged(target, world.getBlockState(target.below())
-			.getBlock(), target.below());
+			.getBlock(), Orientation.random(world.getRandom()));
 	}
 
 	public static CompoundTag prepareBlockEntityData(BlockState blockState, BlockEntity blockEntity) {
@@ -276,7 +281,8 @@ public class BlockHelper {
 
 		SafeNbtWriter writer = SafeNbtWriterRegistry.REGISTRY.get(blockEntity.getType());
 		if (AllBlockTags.SAFE_NBT.matches(blockState)) {
-			data = blockEntity.saveWithFullMetadata();
+			if (blockEntity.hasLevel())
+				data = blockEntity.saveWithFullMetadata(blockEntity.getLevel().registryAccess());
 		} else if (writer != null) {
 			data = new CompoundTag();
 			writer.writeSafe(blockEntity, data);
@@ -308,18 +314,16 @@ public class BlockHelper {
 
 		if (block == Blocks.COMPOSTER)
 			state = Blocks.COMPOSTER.defaultBlockState();
-		else if (block != Blocks.SEA_PICKLE && block instanceof IPlantable)
-			state = ((IPlantable) block).getPlant(world, target);
 		else if (state.is(BlockTags.CAULDRONS))
 			state = Blocks.CAULDRON.defaultBlockState();
 
-		if (world.dimensionType()
-			.ultraWarm() && state.getFluidState().is(FluidTags.WATER)) {
+		if (world.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, target)
+			&& state.getFluidState().is(FluidTags.WATER)) {
 			int i = target.getX();
 			int j = target.getY();
 			int k = target.getZ();
 			world.playSound(null, target, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.5F,
-				2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
+				2.6F + (world.getRandom().nextFloat() - world.getRandom().nextFloat()) * 0.8F);
 
 			for (int l = 0; l < 8; ++l) {
 				world.addParticle(ParticleTypes.LARGE_SMOKE, i + Math.random(), j + Math.random(), k + Math.random(),
@@ -337,7 +341,7 @@ public class BlockHelper {
 
 		if (data != null) {
 			if (existingBlockEntity instanceof IMergeableBE mergeable) {
-				BlockEntity loaded = BlockEntity.loadStatic(target, state, data);
+				BlockEntity loaded = BlockEntity.loadStatic(target, state, data, world.registryAccess());
 				if (loaded != null) {
 					if (existingBlockEntity.getType()
 						.equals(loaded.getType())) {
@@ -353,8 +357,9 @@ public class BlockHelper {
 				data.putInt("z", target.getZ());
 				if (blockEntity instanceof IMultiBlockEntityContainer imbe)
 					if (!imbe.isController())
-						data.put("Controller", NbtUtils.writeBlockPos(imbe.getController()));
-				blockEntity.load(data);
+						data.store("Controller", BlockPos.CODEC, imbe.getController());
+				blockEntity.loadWithComponents(
+					TagValueInput.create(ProblemReporter.DISCARDING, world.registryAccess(), data));
 			}
 		}
 

@@ -20,10 +20,11 @@ import com.bikerboys.schematicannon.foundation.gui.widget.SelectionScrollInput;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 import com.bikerboys.schematicannon.foundation.utility.CreatePaths;
 
-import net.createmod.catnip.gui.element.GuiGameElement;
-import net.minecraft.Util;
-import net.minecraft.client.gui.GuiGraphics;
+import com.bikerboys.schematicannon.foundation.gui.GuiGameElement;
+import net.minecraft.util.Util;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -51,7 +52,7 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 	private float chasingProgress;
 	private float lastChasingProgress;
 
-	private final ItemStack renderedItem = AllBlocks.SCHEMATIC_TABLE.asStack();
+	private final ItemStack renderedItem = new ItemStack(AllBlocks.SCHEMATIC_TABLE.get());
 
 	private List<Rect2i> extraAreas = Collections.emptyList();
 
@@ -73,15 +74,17 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 		int x = leftPos;
 		int y = topPos + 2;
 
-		schematicsLabel = new Label(x + 51, y + 26, CommonComponents.EMPTY).withShadow();
+		schematicsLabel = new Label(x + 51, y + 26, CommonComponents.EMPTY)
+			.withShadow()
+			.withMaxWidth(126, false);
 		schematicsLabel.text = CommonComponents.EMPTY;
 		if (!availableSchematics.isEmpty()) {
 			schematicsArea =
 				new SelectionScrollInput(x + 45, y + 21, 139, 18).forOptions(availableSchematics)
 					.titled(availableSchematicsTitle.plainCopy())
 					.writingTo(schematicsLabel);
+			schematicsArea.onChanged();
 			addRenderableWidget(schematicsArea);
-			addRenderableWidget(schematicsLabel);
 		}
 
 		confirmButton = new IconButton(x + 44, y + 56, AllIcons.I_CONFIRM);
@@ -105,7 +108,8 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 			ClientSchematicLoader schematicSender = SchematicannonClient.SCHEMATIC_SENDER;
 			schematicSender.refresh();
 			List<Component> availableSchematics1 = schematicSender.getAvailableSchematics();
-			removeWidget(schematicsArea);
+			if (schematicsArea != null)
+				removeWidget(schematicsArea);
 
 			if (!availableSchematics1.isEmpty()) {
 				schematicsArea = new SelectionScrollInput(leftPos + 45, topPos + 21, 139, 18)
@@ -132,7 +136,7 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 	}
 
 	@Override
-	protected void renderBg(GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
+	protected void renderBg(GuiGraphicsExtractor graphics, float partialTicks, int mouseX, int mouseY) {
 		int invX = getLeftOfCentered(PLAYER_INVENTORY.getWidth());
 		int invY = topPos + background.getHeight() + 4;
 		renderPlayerInventory(graphics, invX, invY);
@@ -151,10 +155,19 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 		else
 			titleText = title;
 
-		graphics.drawString(font, titleText, x + (background.getWidth() - 8 - font.width(titleText)) / 2, y + 4, 0x505050, false);
+		graphics.text(font, titleText, x + (background.getWidth() - 8 - font.width(titleText)) / 2,
+			y + 4, 0xFF505050, false);
 
 		if (schematicsArea == null)
-			graphics.drawString(font, noSchematics, x + 54, y + 26, 0xD3D3D3);
+			graphics.text(font, noSchematics, x + 54, y + 26, 0xFFD3D3D3);
+		else if (schematicsLabel != null && schematicsLabel.text != null) {
+			String fullName = schematicsLabel.text.getString();
+			String visibleName = fullName;
+			if (font.width(fullName) > 126)
+				visibleName = font.plainSubstrByWidth(fullName, 117) + "...";
+			graphics.text(font, visibleName, x + 51, y + 28,
+				menu.contentHolder.isUploading ? 0xFFCCDDFF : 0xFFFFFFFF, true);
+		}
 
 		GuiGameElement.of(renderedItem)
 			.<GuiGameElement.GuiRenderBuilder>at(x + background.getWidth(), y + background.getHeight() - 40, -200)
@@ -164,8 +177,8 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 		int width = (int) (SCHEMATIC_TABLE_PROGRESS.getWidth()
 			* Mth.lerp(partialTicks, lastChasingProgress, chasingProgress));
 		int height = SCHEMATIC_TABLE_PROGRESS.getHeight();
-		graphics.blit(SCHEMATIC_TABLE_PROGRESS.location, x + 70, y + 59, SCHEMATIC_TABLE_PROGRESS.getStartX(),
-			SCHEMATIC_TABLE_PROGRESS.getStartY(), width, height);
+		graphics.blit(RenderPipelines.GUI_TEXTURED, SCHEMATIC_TABLE_PROGRESS.location, x + 70, y + 59,
+			SCHEMATIC_TABLE_PROGRESS.getStartX(), SCHEMATIC_TABLE_PROGRESS.getStartY(), width, height, 256, 256);
 	}
 
 	@Override

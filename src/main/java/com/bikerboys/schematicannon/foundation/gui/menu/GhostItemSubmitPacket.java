@@ -1,11 +1,12 @@
 package com.bikerboys.schematicannon.foundation.gui.menu;
 
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public class GhostItemSubmitPacket extends SimplePacketBase {
 
@@ -18,18 +19,18 @@ public class GhostItemSubmitPacket extends SimplePacketBase {
 	}
 
 	public GhostItemSubmitPacket(FriendlyByteBuf buffer) {
-		item = buffer.readItem();
+		item = ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buffer);
 		slot = buffer.readInt();
 	}
 
 	@Override
 	public void write(FriendlyByteBuf buffer) {
-		buffer.writeItem(item);
+		ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buffer, item);
 		buffer.writeInt(slot);
 	}
 
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null)

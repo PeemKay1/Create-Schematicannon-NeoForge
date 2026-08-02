@@ -12,12 +12,16 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class SchematicannonMenu extends MenuBase<SchematicannonBlockEntity> {
 
 	public SchematicannonMenu(MenuType<?> type, int id, Inventory inv, FriendlyByteBuf buffer) {
 		super(type, id, inv, buffer);
+	}
+
+	public SchematicannonMenu(int id, Inventory inv, FriendlyByteBuf buffer) {
+		this(AllMenuTypes.SCHEMATICANNON.get(), id, inv, buffer);
 	}
 
 	public SchematicannonMenu(MenuType<?> type, int id, Inventory inv, SchematicannonBlockEntity be) {

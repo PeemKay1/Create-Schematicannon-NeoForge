@@ -39,7 +39,7 @@ public class SchematicExport {
 		BlockPos bounds = new BlockPos(bb.getXSpan(), bb.getYSpan(), bb.getZSpan());
 
 		StructureTemplate structure = new StructureTemplate();
-		structure.fillFromWorld(level, origin, bounds, true, Blocks.AIR);
+		structure.fillFromWorld(level, origin, bounds, true, java.util.List.of(Blocks.AIR));
 		CompoundTag data = structure.save(new CompoundTag());
 		SchematicAndQuillItem.replaceStructureVoidWithAir(data);
 

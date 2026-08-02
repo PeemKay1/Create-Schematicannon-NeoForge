@@ -2,9 +2,9 @@ package com.bikerboys.schematicannon.content.schematics.client.tools;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.createmod.catnip.render.SuperRenderTypeBuffer;
-import net.createmod.catnip.animation.AnimationTickHolder;
-import net.createmod.catnip.outliner.LineOutline;
+import com.bikerboys.schematicannon.foundation.render.SuperRenderTypeBuffer;
+import com.bikerboys.schematicannon.foundation.utility.AnimationTickHolder;
+import com.bikerboys.schematicannon.foundation.render.LineOutline;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 

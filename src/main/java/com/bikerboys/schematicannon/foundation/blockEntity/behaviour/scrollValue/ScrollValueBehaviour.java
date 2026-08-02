@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.common.util.FakePlayer;
+import net.neoforged.neoforge.common.util.FakePlayer;
 
 public class ScrollValueBehaviour extends BlockEntityBehaviour implements ValueSettingsBehaviour {
 
@@ -68,7 +68,7 @@ public class ScrollValueBehaviour extends BlockEntityBehaviour implements ValueS
 
 	@Override
 	public void read(CompoundTag nbt, boolean clientPacket) {
-		value = nbt.getInt("ScrollValue");
+		value = nbt.getIntOr("ScrollValue", 0);
 		super.read(nbt, clientPacket);
 	}
 
@@ -182,7 +182,7 @@ public class ScrollValueBehaviour extends BlockEntityBehaviour implements ValueS
 	public void onShortInteract(Player player, InteractionHand hand, Direction side, BlockHitResult hitResult) {
 		if (player instanceof FakePlayer)
 			blockEntity.getBlockState()
-				.use(getWorld(), player, hand, hitResult);
+				.useWithoutItem(getWorld(), player, hitResult);
 	}
 
 }

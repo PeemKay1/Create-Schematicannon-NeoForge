@@ -7,6 +7,7 @@ import java.util.Locale;
 
 import com.google.common.collect.Sets;
 import com.bikerboys.schematicannon.AllBlocks;
+import com.bikerboys.schematicannon.AllDataComponents;
 import com.bikerboys.schematicannon.content.equipment.clipboard.ClipboardEntry;
 import com.bikerboys.schematicannon.content.equipment.clipboard.ClipboardOverrides;
 import com.bikerboys.schematicannon.content.equipment.clipboard.ClipboardOverrides.ClipboardType;
@@ -17,16 +18,17 @@ import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.WrittenBookContent;
+import net.minecraft.server.network.Filterable;
 
 public class MaterialChecklist {
 
@@ -78,8 +80,7 @@ public class MaterialChecklist {
 	public ItemStack createWrittenBook() {
 		ItemStack book = new ItemStack(Items.WRITTEN_BOOK);
 
-		CompoundTag tag = book.getOrCreateTag();
-		ListTag pages = new ListTag();
+		List<Filterable<Component>> pages = new ArrayList<>();
 
 		int itemsWritten = 0;
 		MutableComponent textComponent;
@@ -87,16 +88,16 @@ public class MaterialChecklist {
 		if (blocksNotLoaded) {
 			textComponent = Component.literal("\n" + ChatFormatting.RED);
 			textComponent = textComponent.append(CreateLang.translateDirect("materialChecklist.blocksNotLoaded"));
-			pages.add(StringTag.valueOf(Component.Serializer.toJson(textComponent)));
+			pages.add(Filterable.passThrough(textComponent));
 		}
 
 		List<Item> keys = new ArrayList<>(Sets.union(required.keySet(), damageRequired.keySet()));
 		Collections.sort(keys, (item1, item2) -> {
 			Locale locale = Locale.ENGLISH;
-			String name1 = item1.getDescription()
+			String name1 = new ItemStack(item1).getHoverName()
 				.getString()
 				.toLowerCase(locale);
-			String name2 = item2.getDescription()
+			String name2 = new ItemStack(item2).getHoverName()
 				.getString()
 				.toLowerCase(locale);
 			return name1.compareTo(name2);
@@ -118,7 +119,7 @@ public class MaterialChecklist {
 				itemsWritten = 0;
 				textComponent.append(Component.literal("\n >>>")
 					.withStyle(ChatFormatting.BLUE));
-				pages.add(StringTag.valueOf(Component.Serializer.toJson(textComponent)));
+				pages.add(Filterable.passThrough(textComponent));
                 textComponent = Component.empty();
 			}
 
@@ -131,7 +132,7 @@ public class MaterialChecklist {
 				itemsWritten = 0;
 				textComponent.append(Component.literal("\n >>>")
 					.withStyle(ChatFormatting.DARK_GREEN));
-				pages.add(StringTag.valueOf(Component.Serializer.toJson(textComponent)));
+				pages.add(Filterable.passThrough(textComponent));
                 textComponent = Component.empty();
 			}
 
@@ -139,25 +140,19 @@ public class MaterialChecklist {
 			textComponent.append(entry(new ItemStack(item), getRequiredAmount(item), false, true));
 		}
 
-		pages.add(StringTag.valueOf(Component.Serializer.toJson(textComponent)));
-
-		tag.put("pages", pages);
-		tag.putBoolean("readonly", true);
-		tag.putString("author", "Schematicannon");
-		tag.putString("title", ChatFormatting.BLUE + "Material Checklist");
+		pages.add(Filterable.passThrough(textComponent));
+		book.set(DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(
+			Filterable.passThrough("Material Checklist"), "Schematicannon", 0, pages, true));
 		textComponent = CreateLang.translateDirect("materialChecklist")
 			.setStyle(Style.EMPTY.withColor(ChatFormatting.BLUE)
 				.withItalic(Boolean.FALSE));
-		book.getOrCreateTagElement("display")
-			.putString("Name", Component.Serializer.toJson(textComponent));
-		book.setTag(tag);
+		book.set(DataComponents.CUSTOM_NAME, textComponent);
 
 		return book;
 	}
 
 	public ItemStack createWrittenClipboard() {
-		ItemStack clipboard = AllBlocks.CLIPBOARD.asStack();
-		CompoundTag tag = clipboard.getOrCreateTag();
+		ItemStack clipboard = AllBlocks.CLIPBOARD_ITEM.get().getDefaultInstance();
 		int itemsWritten = 0;
 
 		List<List<ClipboardEntry>> pages = new ArrayList<>();
@@ -171,10 +166,10 @@ public class MaterialChecklist {
 		List<Item> keys = new ArrayList<>(Sets.union(required.keySet(), damageRequired.keySet()));
 		Collections.sort(keys, (item1, item2) -> {
 			Locale locale = Locale.ENGLISH;
-			String name1 = item1.getDescription()
+			String name1 = new ItemStack(item1).getHoverName()
 				.getString()
 				.toLowerCase(locale);
-			String name2 = item2.getDescription()
+			String name2 = new ItemStack(item2).getHoverName()
 				.getString()
 				.toLowerCase(locale);
 			return name1.compareTo(name2);
@@ -221,11 +216,11 @@ public class MaterialChecklist {
 		pages.add(currentPage);
 		ClipboardEntry.saveAll(pages, clipboard);
 		ClipboardOverrides.switchTo(ClipboardType.WRITTEN, clipboard);
-		clipboard.getOrCreateTagElement("display")
-			.putString("Name", Component.Serializer.toJson(CreateLang.translateDirect("materialChecklist")
-				.setStyle(Style.EMPTY.withItalic(Boolean.FALSE))));
-		tag.putBoolean("Readonly", true);
-		clipboard.setTag(tag);
+		clipboard.set(DataComponents.CUSTOM_NAME, CreateLang.translateDirect("materialChecklist")
+			.setStyle(Style.EMPTY.withItalic(Boolean.FALSE)));
+		var data = clipboard.getOrDefault(AllDataComponents.CLIPBOARD_DATA, new net.minecraft.nbt.CompoundTag()).copy();
+		data.putBoolean("Readonly", true);
+		clipboard.set(AllDataComponents.CLIPBOARD_DATA, data);
 		return clipboard;
 	}
 
@@ -240,9 +235,9 @@ public class MaterialChecklist {
 		int stacks = amount / 64;
 		int remainder = amount % 64;
         MutableComponent tc = Component.empty();
-		tc.append(Component.translatable(item.getDescriptionId())
+		tc.append(Component.translatable(item.getItem().getDescriptionId())
 			.setStyle(Style.EMPTY
-				.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new HoverEvent.ItemStackInfo(item)))));
+				.withHoverEvent(new HoverEvent.ShowItem(ItemStackTemplate.fromNonEmptyStack(item)))));
 
 		if (!unfinished && forBook)
 			tc.append(" \u2714");

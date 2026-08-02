@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -27,6 +28,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -84,7 +86,7 @@ public class ServerSchematicLoader {
 	}
 
 	public void handleNewUpload(ServerPlayer player, String schematic, long size, BlockPos pos) {
-		String playerName = player.getGameProfile().getName();
+		String playerName = player.getGameProfile().name();
 
 		Path baseDir = CreatePaths.UPLOADED_SCHEMATICS_DIR;
 		Path playerPath = baseDir.resolve(playerName).normalize();
@@ -99,7 +101,7 @@ public class ServerSchematicLoader {
 		}
 
 		// Unsupported Format
-		if (!schematic.endsWith(".nbt")) {
+		if (!isSupportedFile(schematic)) {
 			Schematicannon.LOGGER.warn("Attempted Schematic Upload with non-supported Format: {}", playerSchematicId);
 			return;
 		}
@@ -114,7 +116,7 @@ public class ServerSchematicLoader {
 
 		try {
 			// Validate Referenced Block
-			SchematicTableBlockEntity table = getTable(player.getCommandSenderWorld(), pos);
+			SchematicTableBlockEntity table = getTable(player.level(), pos);
 			if (table == null)
 				return;
 
@@ -150,6 +152,8 @@ public class ServerSchematicLoader {
 	}
 
 	protected boolean validateSchematicSizeOnServer(ServerPlayer player, long size) {
+		if (player.level().getServer() != null && player.level().getServer().isSingleplayer())
+			return true;
 		long maxFileSize = 256;
 		if (size > maxFileSize * 1000) {
 			player.sendSystemMessage(CreateLang.translateDirect("schematics.uploadTooLarge")
@@ -165,7 +169,7 @@ public class ServerSchematicLoader {
 
 	public void handleWriteRequest(ServerPlayer player, String schematic, byte[] data) {
 		String playerSchematicId = player.getGameProfile()
-			.getName() + "/" + schematic;
+			.name() + "/" + schematic;
 
 		if (activeUploads.containsKey(playerSchematicId)) {
 			SchematicUploadEntry entry = activeUploads.get(playerSchematicId);
@@ -232,7 +236,7 @@ public class ServerSchematicLoader {
 
 	public void handleFinishedUpload(ServerPlayer player, String schematic) {
 		String playerSchematicId = player.getGameProfile()
-			.getName() + "/" + schematic;
+			.name() + "/" + schematic;
 
 		if (activeUploads.containsKey(playerSchematicId)) {
 			try {
@@ -253,8 +257,15 @@ public class ServerSchematicLoader {
 				if (table == null)
 					return;
 				table.finishUpload();
-				table.inventory.setStackInSlot(1, SchematicItem.create(world, schematic, player.getGameProfile()
-					.getName()));
+				ItemStack schematicItem = SchematicItem.create(world, schematic, player.getGameProfile().name());
+				if (schematicItem.getOrDefault(com.bikerboys.schematicannon.AllDataComponents.SCHEMATIC_BOUNDS,
+					net.minecraft.core.Vec3i.ZERO).equals(net.minecraft.core.Vec3i.ZERO)) {
+					Files.deleteIfExists(CreatePaths.UPLOADED_SCHEMATICS_DIR.resolve(playerSchematicId));
+					player.sendSystemMessage(CreateLang.translateDirect("schematics.importFailed")
+						.withStyle(ChatFormatting.RED));
+					return;
+				}
+				table.inventory.setStackInSlot(1, schematicItem);
 
 			} catch (IOException e) {
 				Schematicannon.LOGGER.error("Exception Thrown when finishing Upload: {}", playerSchematicId, e);
@@ -264,7 +275,7 @@ public class ServerSchematicLoader {
 
 	public void handleInstantSchematic(ServerPlayer player, String schematic, Level world, BlockPos pos,
 									   BlockPos bounds) {
-		String playerName = player.getGameProfile().getName();
+		String playerName = player.getGameProfile().name();
 
 		Path baseDir = CreatePaths.UPLOADED_SCHEMATICS_DIR;
 		Path playerPath = baseDir.resolve(playerName).normalize();
@@ -285,7 +296,7 @@ public class ServerSchematicLoader {
 		}
 
 		// Not holding S&Q
-		if (!AllItems.SCHEMATIC_AND_QUILL.isIn(player.getMainHandItem()))
+		if (!player.getMainHandItem().is(AllItems.SCHEMATIC_AND_QUILL.get()))
 			return;
 
 		// if there's too many schematics, delete oldest
@@ -326,6 +337,11 @@ public class ServerSchematicLoader {
 			Schematicannon.LOGGER.error("Error getting modification time of file {}", file.getFileName(), e);
 			throw new IllegalStateException(e);
 		}
+	}
+
+	private static boolean isSupportedFile(String schematic) {
+		String lower = schematic.toLowerCase(Locale.ROOT);
+		return lower.endsWith(".nbt") || lower.endsWith(LitematicImporter.EXTENSION);
 	}
 
 }

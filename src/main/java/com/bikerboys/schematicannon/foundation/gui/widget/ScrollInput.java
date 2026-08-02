@@ -7,7 +7,6 @@ import com.bikerboys.schematicannon.AllKeys;
 import com.bikerboys.schematicannon.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour.StepContext;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 
-import net.createmod.catnip.gui.widget.AbstractSimiWidget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;

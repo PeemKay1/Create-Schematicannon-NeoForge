@@ -9,11 +9,11 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import dev.engine_room.flywheel.api.visualization.VisualizationLevel;
 import it.unimi.dsi.fastutil.objects.Object2ShortMap;
 import it.unimi.dsi.fastutil.objects.Object2ShortOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.core.particles.ExplosionParticleInfo;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -21,11 +21,18 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.random.WeightedList;
+import net.minecraft.world.TickRateManager;
+import net.minecraft.world.attribute.EnvironmentAttributeSystem;
+import net.minecraft.world.clock.ClockManager;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureFlagSet;
-import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.alchemy.PotionBrewing;
+import net.minecraft.world.item.crafting.RecipeAccess;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biome;
@@ -33,25 +40,29 @@ import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.FuelValues;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkSource;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.entity.LevelEntityGetter;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.level.gameevent.GameEvent.Context;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.WritableLevelData;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.ticks.LevelTickAccess;
+import net.neoforged.neoforge.entity.PartEntity;
 
-public class VirtualRenderWorld extends Level implements VisualizationLevel {
+public class VirtualRenderWorld extends Level {
 	protected final Level level;
 	protected final int minBuildHeight;
 	protected final int height;
@@ -75,12 +86,12 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 	}
 
 	public VirtualRenderWorld(Level level, Vec3i biomeOffset) {
-		this(level, level.getMinBuildHeight(), level.getHeight(), biomeOffset);
+		this(level, level.getMinY(), level.getHeight(), biomeOffset);
 	}
 
 	public VirtualRenderWorld(Level level, int minBuildHeight, int height, Vec3i biomeOffset) {
-		super((WritableLevelData) level.getLevelData(), level.dimension(), level.registryAccess(), level.dimensionTypeRegistration(), level.getProfilerSupplier(),
-				true, false, 0, 0);
+		super((WritableLevelData) level.getLevelData(), level.dimension(), level.registryAccess(),
+			level.dimensionTypeRegistration(), level.isClientSide(), level.isDebug(), 0, 0);
 		this.level = level;
 		this.minBuildHeight = nextMultipleOf16(minBuildHeight);
 		this.height = nextMultipleOf16(height);
@@ -121,9 +132,9 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 		var selfBrightness = super.getBrightness(lightType, blockPos);
 
 		if (lightType == LightLayer.SKY) {
-			return Math.max(selfBrightness, LightTexture.sky(externalPackedLight));
+			return Math.max(selfBrightness, externalPackedLight >> 20 & 15);
 		} else {
-			return Math.max(selfBrightness, LightTexture.block(externalPackedLight));
+			return Math.max(selfBrightness, externalPackedLight >> 4 & 15);
 		}
 	}
 
@@ -280,7 +291,7 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 	}
 
 	@Override
-	public int getMinBuildHeight() {
+	public int getMinY() {
 		return minBuildHeight;
 	}
 
@@ -317,7 +328,6 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 		return 15;
 	}
 
-	@Override
 	public float getShade(Direction direction, boolean shade) {
 		return 1f;
 	}
@@ -330,8 +340,8 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 	}
 
 	@Override
-	public RecipeManager getRecipeManager() {
-		return level.getRecipeManager();
+	public RecipeAccess recipeAccess() {
+		return level.recipeAccess();
 	}
 
 	@Override
@@ -377,12 +387,12 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 	}
 
 	@Override
-	public void playSeededSound(Player player, double x, double y, double z, Holder<SoundEvent> soundEvent,
+	public void playSeededSound(Entity player, double x, double y, double z, Holder<SoundEvent> soundEvent,
 			SoundSource soundSource, float volume, float pitch, long seed) {
 	}
 
 	@Override
-	public void playSeededSound(Player player, Entity entity, Holder<SoundEvent> soundEvent, SoundSource soundSource,
+	public void playSeededSound(Entity player, Entity entity, Holder<SoundEvent> soundEvent, SoundSource soundSource,
 			float volume, float pitch, long seed) {
 	}
 
@@ -399,17 +409,8 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 
 	@Override
 	@Nullable
-	public MapItemSavedData getMapData(String mapName) {
-		return null;
-	}
-
-	@Override
-	public void setMapData(String mapId, MapItemSavedData data) {
-	}
-
-	@Override
-	public int getFreeMapId() {
-		return 0;
+	public MapItemSavedData getMapData(MapId mapId) {
+		return level.getMapData(mapId);
 	}
 
 	@Override
@@ -417,11 +418,11 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 	}
 
 	@Override
-	public void levelEvent(@Nullable Player player, int type, BlockPos pos, int data) {
+	public void levelEvent(@Nullable Entity entity, int type, BlockPos pos, int data) {
 	}
 
 	@Override
-	public void gameEvent(GameEvent event, Vec3 position, Context context) {
+	public void gameEvent(Holder<GameEvent> event, Vec3 position, GameEvent.Context context) {
 	}
 
 	@Override
@@ -439,50 +440,60 @@ public class VirtualRenderWorld extends Level implements VisualizationLevel {
 		return chunkSource.getChunk(chunkX, chunkZ);
 	}
 
-	// Intentionally copied from LevelHeightAccessor. Lithium overrides these methods so we need to, too.
-
 	@Override
-	public int getMaxBuildHeight() {
-		return this.getMinBuildHeight() + this.getHeight();
+	public void explode(Entity entity, DamageSource damageSource, ExplosionDamageCalculator calculator, double x,
+			double y, double z, float radius, boolean fire, ExplosionInteraction interaction,
+			ParticleOptions smallParticle, ParticleOptions largeParticle,
+			WeightedList<ExplosionParticleInfo> particles, Holder<SoundEvent> sound) {
 	}
 
 	@Override
-	public int getSectionsCount() {
-		return this.getMaxSection() - this.getMinSection();
+	public void setRespawnData(LevelData.RespawnData data) {
 	}
 
 	@Override
-	public int getMinSection() {
-		return SectionPos.blockToSectionCoord(this.getMinBuildHeight());
+	public LevelData.RespawnData getRespawnData() {
+		return level.getRespawnData();
 	}
 
 	@Override
-	public int getMaxSection() {
-		return SectionPos.blockToSectionCoord(this.getMaxBuildHeight() - 1) + 1;
+	public Collection<? extends PartEntity<?>> dragonParts() {
+		return Collections.emptyList();
 	}
 
 	@Override
-	public boolean isOutsideBuildHeight(BlockPos pos) {
-		return this.isOutsideBuildHeight(pos.getY());
+	public TickRateManager tickRateManager() {
+		return level.tickRateManager();
 	}
 
 	@Override
-	public boolean isOutsideBuildHeight(int y) {
-		return y < this.getMinBuildHeight() || y >= this.getMaxBuildHeight();
+	public ClockManager clockManager() {
+		return level.clockManager();
 	}
 
 	@Override
-	public int getSectionIndex(int y) {
-		return this.getSectionIndexFromSectionY(SectionPos.blockToSectionCoord(y));
+	public EnvironmentAttributeSystem environmentAttributes() {
+		return level.environmentAttributes();
 	}
 
 	@Override
-	public int getSectionIndexFromSectionY(int sectionY) {
-		return sectionY - this.getMinSection();
+	public PotionBrewing potionBrewing() {
+		return level.potionBrewing();
 	}
 
 	@Override
-	public int getSectionYFromSectionIndex(int sectionIndex) {
-		return sectionIndex + this.getMinSection();
+	public FuelValues fuelValues() {
+		return level.fuelValues();
 	}
+
+	@Override
+	public int getSeaLevel() {
+		return level.getSeaLevel();
+	}
+
+	@Override
+	public WorldBorder getWorldBorder() {
+		return level.getWorldBorder();
+	}
+
 }

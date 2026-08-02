@@ -2,12 +2,10 @@ package com.bikerboys.schematicannon.foundation.gui.widget;
 
 import javax.annotation.Nonnull;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.createmod.catnip.gui.widget.AbstractSimiWidget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -18,18 +16,20 @@ public class Label extends AbstractSimiWidget {
 	protected boolean hasShadow;
 	protected int color;
 	protected Font font;
+	private int maxWidthPx = -1;
+	private boolean trimFront;
 
 	public Label(int x, int y, Component text) {
 		super(x, y, Minecraft.getInstance().font.width(text), 10);
 		font = Minecraft.getInstance().font;
 		this.text = Component.literal("Label");
-		color = 0xFFFFFF;
+		color = 0xFFFFFFFF;
 		hasShadow = false;
 		suffix = "";
 	}
 
 	public Label colored(int color) {
-		this.color = color;
+		this.color = (color & 0xFF000000) == 0 ? color | 0xFF000000 : color;
 		return this;
 	}
 
@@ -40,6 +40,12 @@ public class Label extends AbstractSimiWidget {
 
 	public Label withSuffix(String s) {
 		suffix = s;
+		return this;
+	}
+
+	public Label withMaxWidth(int maxWidthPx, boolean trimFront) {
+		this.maxWidthPx = maxWidthPx;
+		this.trimFront = trimFront;
 		return this;
 	}
 
@@ -71,16 +77,19 @@ public class Label extends AbstractSimiWidget {
 	}
 
 	@Override
-	protected void doRender(@Nonnull GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+	protected void doRender(@Nonnull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
 		if (text == null || text.getString().isEmpty())
 			return;
 
-		RenderSystem.setShaderColor(1, 1, 1, 1);
 		MutableComponent copy = text.plainCopy();
 		if (suffix != null && !suffix.isEmpty())
 			copy.append(suffix);
+		if (maxWidthPx > 0 && font.width(copy) > maxWidthPx) {
+			setTextAndTrim(copy, trimFront, maxWidthPx);
+			copy = text == null ? Component.empty() : text.plainCopy();
+		}
 
-		graphics.drawString(font, copy, getX(), getY(), color, hasShadow);
+		graphics.text(font, copy, getX(), getY(), color, hasShadow);
 	}
 
 }

@@ -2,10 +2,9 @@ package com.bikerboys.schematicannon.content.schematics.client.tools;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.createmod.catnip.render.SuperRenderTypeBuffer;
-import net.minecraft.client.gui.GuiGraphics;
+import com.bikerboys.schematicannon.foundation.render.SuperRenderTypeBuffer;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
 
 public abstract class PlacementToolBase extends SchematicToolBase {
 
@@ -25,8 +24,8 @@ public abstract class PlacementToolBase extends SchematicToolBase {
 	}
 
 	@Override
-	public void renderOverlay(ForgeGui gui, GuiGraphics graphics, float partialTicks, int width, int height) {
-		super.renderOverlay(gui, graphics, partialTicks, width, height);
+	public void renderOverlay(GuiGraphicsExtractor graphics, float partialTicks, int width, int height) {
+		super.renderOverlay(graphics, partialTicks, width, height);
 	}
 
 	@Override

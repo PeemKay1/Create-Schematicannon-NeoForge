@@ -2,7 +2,7 @@ package com.bikerboys.schematicannon.foundation.blockEntity.behaviour;
 
 import java.util.function.BiPredicate;
 
-import net.createmod.catnip.math.VecHelper;
+import com.bikerboys.schematicannon.foundation.utility.VecHelper;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;

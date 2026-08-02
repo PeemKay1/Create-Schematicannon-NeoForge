@@ -1,13 +1,11 @@
 package com.bikerboys.schematicannon;
 
 import static net.minecraft.core.Direction.SOUTH;
-import static net.minecraft.core.Direction.UP;
 
-import java.util.function.BiFunction;
+import java.util.EnumMap;
+import java.util.Map;
 
-import net.createmod.catnip.math.VoxelShaper;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -16,9 +14,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public class AllShapes {
 
 
-	public static final VoxelShaper CLIPBOARD_FLOOR = shape(3, 0, 1, 13, 1, 15).forHorizontal(SOUTH);
-	public static final VoxelShaper CLIPBOARD_CEILING = shape(3, 15, 1, 13, 16, 15).forHorizontal(SOUTH);
-	public static final VoxelShaper CLIPBOARD_WALL = shape(3, 1, 0, 13, 15, 1).forHorizontal(SOUTH);
+	public static final Map<Direction, VoxelShape> CLIPBOARD_FLOOR =
+		shape(3, 0, 1, 13, 1, 15).forHorizontal(SOUTH);
+	public static final Map<Direction, VoxelShape> CLIPBOARD_CEILING =
+		shape(3, 15, 1, 13, 16, 15).forHorizontal(SOUTH);
+	public static final Map<Direction, VoxelShape> CLIPBOARD_WALL =
+		shape(3, 1, 0, 13, 15, 1).forHorizontal(SOUTH);
 
 
 	public static final VoxelShape TABLE_POLE_SHAPE = shape(4, 0, 4, 12, 2, 12).add(5, 2, 5, 11, 14, 11)
@@ -28,7 +29,7 @@ public class AllShapes {
 
 
 	// More Shapers
-	public static final VoxelShaper
+	public static final Map<Direction, VoxelShape>
 
 		SCHEMATICS_TABLE = shape(4, 0, 4, 12, 12, 12).add(0, 11, 2, 16, 14, 14)
 			.forDirectional(SOUTH)
@@ -74,32 +75,22 @@ public class AllShapes {
 			return shape;
 		}
 
-		public VoxelShaper build(BiFunction<VoxelShape, Direction, VoxelShaper> factory, Direction direction) {
-			return factory.apply(shape, direction);
+		public Map<Direction, VoxelShape> forHorizontal(Direction sourceDirection) {
+			if (!sourceDirection.getAxis().isHorizontal())
+				throw new IllegalArgumentException("Source direction must be horizontal");
+
+			Map<Direction, VoxelShape> northOriented = Shapes.rotateHorizontal(shape);
+			EnumMap<Direction, VoxelShape> result = new EnumMap<>(Direction.class);
+			int offset = sourceDirection.get2DDataValue() - Direction.NORTH.get2DDataValue();
+			for (Direction target : Direction.Plane.HORIZONTAL) {
+				int sourceIndex = Math.floorMod(target.get2DDataValue() - offset, 4);
+				result.put(target, northOriented.get(Direction.from2DDataValue(sourceIndex)));
+			}
+			return result;
 		}
 
-		public VoxelShaper build(BiFunction<VoxelShape, Axis, VoxelShaper> factory, Axis axis) {
-			return factory.apply(shape, axis);
-		}
-
-		public VoxelShaper forDirectional(Direction direction) {
-			return build(VoxelShaper::forDirectional, direction);
-		}
-
-		public VoxelShaper forAxis() {
-			return build(VoxelShaper::forAxis, Axis.Y);
-		}
-
-		public VoxelShaper forHorizontalAxis() {
-			return build(VoxelShaper::forHorizontalAxis, Axis.Z);
-		}
-
-		public VoxelShaper forHorizontal(Direction direction) {
-			return build(VoxelShaper::forHorizontal, direction);
-		}
-
-		public VoxelShaper forDirectional() {
-			return forDirectional(UP);
+		public Map<Direction, VoxelShape> forDirectional(Direction sourceDirection) {
+			return forHorizontal(sourceDirection);
 		}
 
 	}

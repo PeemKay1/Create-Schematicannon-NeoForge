@@ -2,35 +2,30 @@ package com.bikerboys.schematicannon;
 
 import com.bikerboys.schematicannon.content.equipment.clipboard.ClipboardBlockEntity;
 import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonBlockEntity;
-import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonRenderer;
-import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonVisual;
 import com.bikerboys.schematicannon.content.schematics.table.SchematicTableBlockEntity;
-import com.bikerboys.schematicannon.foundation.data.SchematicannonRegistrate;
-import com.tterrag.registrate.util.entry.BlockEntityEntry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
-public class AllBlockEntityTypes {
-	private static final SchematicannonRegistrate REGISTRATE = Schematicannon.registrate();
+public final class AllBlockEntityTypes {
+    private static final DeferredRegister<BlockEntityType<?>> TYPES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE,
+            Schematicannon.ID);
 
-	// Schematics
-	public static final BlockEntityEntry<SchematicannonBlockEntity> SCHEMATICANNON = REGISTRATE
-		.blockEntity("schematicannon", SchematicannonBlockEntity::new)
-		.visual(() -> SchematicannonVisual::new)
-		.validBlocks(AllBlocks.SCHEMATICANNON)
-		.renderer(() -> SchematicannonRenderer::new)
-		.register();
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SchematicannonBlockEntity>> SCHEMATICANNON =
+            TYPES.register("schematicannon", () -> new BlockEntityType<SchematicannonBlockEntity>(SchematicannonBlockEntity::new,
+                    AllBlocks.SCHEMATICANNON.get()));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SchematicTableBlockEntity>> SCHEMATIC_TABLE =
+            TYPES.register("schematic_table", () -> new BlockEntityType<SchematicTableBlockEntity>(SchematicTableBlockEntity::new,
+                    AllBlocks.SCHEMATIC_TABLE.get()));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ClipboardBlockEntity>> CLIPBOARD =
+            TYPES.register("clipboard", () -> new BlockEntityType<ClipboardBlockEntity>(ClipboardBlockEntity::new, AllBlocks.CLIPBOARD.get()));
 
-	public static final BlockEntityEntry<SchematicTableBlockEntity> SCHEMATIC_TABLE = REGISTRATE
-		.blockEntity("schematic_table", SchematicTableBlockEntity::new)
-		.validBlocks(AllBlocks.SCHEMATIC_TABLE)
-		.register();
+    public static void register(IEventBus eventBus) {
+        TYPES.register(eventBus);
+    }
 
-	public static final BlockEntityEntry<ClipboardBlockEntity> CLIPBOARD = REGISTRATE
-		.blockEntity("clipboard", ClipboardBlockEntity::new)
-		.validBlocks(AllBlocks.CLIPBOARD)
-		.register();
-
-
-
-	public static void register() {
-	}
+    private AllBlockEntityTypes() {
+    }
 }

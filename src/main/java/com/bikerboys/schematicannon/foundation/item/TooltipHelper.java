@@ -8,8 +8,8 @@ import java.util.List;
 import com.google.common.base.Strings;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 
-import net.createmod.catnip.data.Couple;
-import net.createmod.catnip.lang.FontHelper;
+import com.bikerboys.schematicannon.foundation.utility.Couple;
+import com.bikerboys.schematicannon.foundation.utility.FontHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

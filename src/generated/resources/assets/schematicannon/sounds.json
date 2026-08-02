@@ -3,7 +3,7 @@
     "sounds": [
       {
         "type": "file",
-        "name": "create:clipboard_check"
+        "name": "schematicannon:clipboard_check"
       }
     ]
   },
@@ -11,7 +11,7 @@
     "sounds": [
       {
         "type": "file",
-        "name": "create:clipboard_erase"
+        "name": "schematicannon:clipboard_erase"
       }
     ]
   },
@@ -22,7 +22,7 @@
         "name": "minecraft:block.barrel.open"
       }
     ],
-    "subtitle": "create.subtitle.item_hatch"
+    "subtitle": "schematicannon.subtitle.item_hatch"
   },
   "item_hatch_compounded_1": {
     "sounds": [
@@ -39,7 +39,7 @@
         "name": "minecraft:block.anvil.land"
       }
     ],
-    "subtitle": "create.subtitle.mechanical_press_activation"
+    "subtitle": "schematicannon.subtitle.mechanical_press_activation"
   },
   "mechanical_press_activation_belt": {
     "sounds": [
@@ -48,7 +48,7 @@
         "name": "minecraft:block.wool.hit"
       }
     ],
-    "subtitle": "create.subtitle.mechanical_press_activation_belt"
+    "subtitle": "schematicannon.subtitle.mechanical_press_activation_belt"
   },
   "mechanical_press_activation_belt_compounded_1": {
     "sounds": [
@@ -73,7 +73,7 @@
         "name": "minecraft:block.gilded_blackstone.break"
       }
     ],
-    "subtitle": "create.subtitle.mixing"
+    "subtitle": "schematicannon.subtitle.mixing"
   },
   "mixing_compounded_1": {
     "sounds": [
@@ -90,7 +90,7 @@
         "name": "minecraft:block.chiseled_bookshelf.break"
       }
     ],
-    "subtitle": "create.subtitle.package_pop"
+    "subtitle": "schematicannon.subtitle.package_pop"
   },
   "package_pop_compounded_1": {
     "sounds": [
@@ -107,7 +107,7 @@
         "name": "minecraft:entity.shulker.open"
       }
     ],
-    "subtitle": "create.subtitle.packager"
+    "subtitle": "schematicannon.subtitle.packager"
   },
   "peculiar_bell_use": {
     "sounds": [
@@ -116,7 +116,7 @@
         "name": "minecraft:block.bell.use"
       }
     ],
-    "subtitle": "create.subtitle.peculiar_bell_use"
+    "subtitle": "schematicannon.subtitle.peculiar_bell_use"
   },
   "potato_hit": {
     "sounds": [
@@ -125,7 +125,7 @@
         "name": "minecraft:entity.item_frame.break"
       }
     ],
-    "subtitle": "create.subtitle.potato_hit"
+    "subtitle": "schematicannon.subtitle.potato_hit"
   },
   "potato_hit_compounded_1": {
     "sounds": [
@@ -139,23 +139,23 @@
     "sounds": [
       {
         "type": "file",
-        "name": "create:sanding_long"
+        "name": "schematicannon:sanding_long"
       }
     ],
-    "subtitle": "create.subtitle.sanding_long"
+    "subtitle": "schematicannon.subtitle.sanding_long"
   },
   "sanding_short": {
     "sounds": [
       {
         "type": "file",
-        "name": "create:sanding_short"
+        "name": "schematicannon:sanding_short"
       },
       {
         "type": "file",
-        "name": "create:sanding_short_1"
+        "name": "schematicannon:sanding_short_1"
       }
     ],
-    "subtitle": "create.subtitle.sanding_short"
+    "subtitle": "schematicannon.subtitle.sanding_short"
   },
   "saw_activate_stone": {
     "sounds": [
@@ -164,7 +164,7 @@
         "name": "minecraft:ui.stonecutter.take_result"
       }
     ],
-    "subtitle": "create.subtitle.saw_activate_stone"
+    "subtitle": "schematicannon.subtitle.saw_activate_stone"
   },
   "saw_activate_wood": {
     "sounds": [
@@ -173,7 +173,7 @@
         "name": "minecraft:entity.boat.paddle_land"
       }
     ],
-    "subtitle": "create.subtitle.saw_activate_wood"
+    "subtitle": "schematicannon.subtitle.saw_activate_wood"
   },
   "schematicannon_finish": {
     "sounds": [
@@ -182,7 +182,7 @@
         "name": "minecraft:block.note_block.bell"
       }
     ],
-    "subtitle": "create.subtitle.schematicannon_finish"
+    "subtitle": "schematicannon.subtitle.schematicannon_finish"
   },
   "schematicannon_launch_block": {
     "sounds": [
@@ -191,7 +191,7 @@
         "name": "minecraft:entity.generic.explode"
       }
     ],
-    "subtitle": "create.subtitle.schematicannon_launch_block"
+    "subtitle": "schematicannon.subtitle.schematicannon_launch_block"
   },
   "scroll_value": {
     "sounds": [
@@ -200,7 +200,7 @@
         "name": "minecraft:block.note_block.hat"
       }
     ],
-    "subtitle": "create.subtitle.scroll_value"
+    "subtitle": "schematicannon.subtitle.scroll_value"
   },
   "slime_added": {
     "sounds": [
@@ -209,82 +209,82 @@
         "name": "minecraft:block.slime_block.place"
       }
     ],
-    "subtitle": "create.subtitle.slime_added"
+    "subtitle": "schematicannon.subtitle.slime_added"
   },
   "spout": {
     "sounds": [
       {
         "type": "file",
-        "name": "create:spout"
+        "name": "schematicannon:spout"
       },
       {
         "type": "file",
-        "name": "create:spout_1"
+        "name": "schematicannon:spout_1"
       },
       {
         "type": "file",
-        "name": "create:spout_2"
+        "name": "schematicannon:spout_2"
       },
       {
         "type": "file",
-        "name": "create:spout_3"
+        "name": "schematicannon:spout_3"
       }
     ],
-    "subtitle": "create.subtitle.spout"
+    "subtitle": "schematicannon.subtitle.spout"
   },
   "steam": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 32,
-        "name": "create:steam"
+        "name": "schematicannon:steam"
       }
     ],
-    "subtitle": "create.subtitle.steam"
+    "subtitle": "schematicannon.subtitle.steam"
   },
   "stock_link": {
     "sounds": [
       {
         "type": "file",
-        "name": "create:stock_link"
+        "name": "schematicannon:stock_link"
       }
     ],
-    "subtitle": "create.subtitle.stock_link"
+    "subtitle": "schematicannon.subtitle.stock_link"
   },
   "stock_ticker_request": {
     "sounds": [
       {
         "type": "file",
-        "name": "create:stock_ticker_request"
+        "name": "schematicannon:stock_ticker_request"
       }
     ],
-    "subtitle": "create.subtitle.stock_ticker_request"
+    "subtitle": "schematicannon.subtitle.stock_ticker_request"
   },
   "stock_ticker_trade": {
     "sounds": [
       {
         "type": "file",
-        "name": "create:stock_ticker_trade"
+        "name": "schematicannon:stock_ticker_trade"
       }
     ],
-    "subtitle": "create.subtitle.stock_ticker_trade"
+    "subtitle": "schematicannon.subtitle.stock_ticker_trade"
   },
   "train": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 128,
-        "name": "create:train"
+        "name": "schematicannon:train"
       }
     ],
-    "subtitle": "create.subtitle.train"
+    "subtitle": "schematicannon.subtitle.train"
   },
   "train2": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 128,
-        "name": "create:train2"
+        "name": "schematicannon:train2"
       }
     ]
   },
@@ -293,75 +293,75 @@
       {
         "type": "file",
         "attenuation_distance": 16,
-        "name": "create:train3"
+        "name": "schematicannon:train3"
       }
     ],
-    "subtitle": "create.subtitle.train3"
+    "subtitle": "schematicannon.subtitle.train3"
   },
   "whistle": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 64,
-        "name": "create:whistle"
+        "name": "schematicannon:whistle"
       }
     ],
-    "subtitle": "create.subtitle.whistle"
+    "subtitle": "schematicannon.subtitle.whistle"
   },
   "whistle_high": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 64,
-        "name": "create:whistle_high"
+        "name": "schematicannon:whistle_high"
       }
     ],
-    "subtitle": "create.subtitle.whistle_high"
+    "subtitle": "schematicannon.subtitle.whistle_high"
   },
   "whistle_low": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 64,
-        "name": "create:whistle_low"
+        "name": "schematicannon:whistle_low"
       }
     ],
-    "subtitle": "create.subtitle.whistle_low"
+    "subtitle": "schematicannon.subtitle.whistle_low"
   },
   "whistle_train": {
     "sounds": [
       {
         "type": "file",
-        "name": "create:whistle_train"
+        "name": "schematicannon:whistle_train"
       }
     ],
-    "subtitle": "create.subtitle.whistle_train"
+    "subtitle": "schematicannon.subtitle.whistle_train"
   },
   "whistle_train_low": {
     "sounds": [
       {
         "type": "file",
-        "name": "create:whistle_train_low"
+        "name": "schematicannon:whistle_train_low"
       }
     ],
-    "subtitle": "create.subtitle.whistle_train_low"
+    "subtitle": "schematicannon.subtitle.whistle_train_low"
   },
   "whistle_train_manual": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 64,
-        "name": "create:whistle_train_manual"
+        "name": "schematicannon:whistle_train_manual"
       }
     ],
-    "subtitle": "create.subtitle.whistle_train_manual"
+    "subtitle": "schematicannon.subtitle.whistle_train_manual"
   },
   "whistle_train_manual_end": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 64,
-        "name": "create:whistle_train_manual_end"
+        "name": "schematicannon:whistle_train_manual_end"
       }
     ]
   },
@@ -370,17 +370,17 @@
       {
         "type": "file",
         "attenuation_distance": 64,
-        "name": "create:whistle_train_manual_low"
+        "name": "schematicannon:whistle_train_manual_low"
       }
     ],
-    "subtitle": "create.subtitle.whistle_train_manual_low"
+    "subtitle": "schematicannon.subtitle.whistle_train_manual_low"
   },
   "whistle_train_manual_low_end": {
     "sounds": [
       {
         "type": "file",
         "attenuation_distance": 64,
-        "name": "create:whistle_train_manual_low_end"
+        "name": "schematicannon:whistle_train_manual_low_end"
       }
     ]
   },
@@ -391,7 +391,7 @@
         "name": "minecraft:block.note_block.basedrum"
       }
     ],
-    "subtitle": "create.subtitle.worldshaper_place"
+    "subtitle": "schematicannon.subtitle.worldshaper_place"
   },
   "wrench_remove": {
     "sounds": [
@@ -400,7 +400,7 @@
         "name": "minecraft:entity.item.pickup"
       }
     ],
-    "subtitle": "create.subtitle.wrench_remove"
+    "subtitle": "schematicannon.subtitle.wrench_remove"
   },
   "wrench_remove_compounded_1": {
     "sounds": [
@@ -417,6 +417,6 @@
         "name": "minecraft:block.wooden_trapdoor.close"
       }
     ],
-    "subtitle": "create.subtitle.wrench_rotate"
+    "subtitle": "schematicannon.subtitle.wrench_rotate"
   }
 }

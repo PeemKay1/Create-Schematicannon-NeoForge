@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 import com.bikerboys.schematicannon.AllPackets;
@@ -27,10 +28,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class ClientSchematicLoader {
 
 	public static final int PACKET_DELAY = 10;
@@ -77,7 +75,7 @@ public class ClientSchematicLoader {
 			if (!isGZIPEncoded(path.toFile())) {
 				LocalPlayer player = Minecraft.getInstance().player;
 				if (player != null)
-					player.displayClientMessage(CreateLang.translateDirect("schematics.wrongFormat"), false);
+					player.sendSystemMessage(CreateLang.translateDirect("schematics.wrongFormat"));
 				return;
 			}
 
@@ -96,8 +94,8 @@ public class ClientSchematicLoader {
 		if (size > maxSize * 1000) {
 			LocalPlayer player = Minecraft.getInstance().player;
 			if (player != null) {
-				player.displayClientMessage(CreateLang.translateDirect("schematics.uploadTooLarge").append(" (" + size / 1000 + " KB)."), false);
-				player.displayClientMessage(CreateLang.translateDirect("schematics.maxAllowedSize").append(" " + maxSize + " KB"), false);
+				player.sendSystemMessage(CreateLang.translateDirect("schematics.uploadTooLarge").append(" (" + size / 1000 + " KB)."));
+				player.sendSystemMessage(CreateLang.translateDirect("schematics.maxAllowedSize").append(" " + maxSize + " KB"));
 			}
 			return false;
 		}
@@ -163,7 +161,7 @@ public class ClientSchematicLoader {
 		availableSchematics.clear();
 
 		try (Stream<Path> paths = Files.list(CreatePaths.SCHEMATICS_DIR)) {
-			paths.filter(f -> !Files.isDirectory(f) && f.getFileName().toString().endsWith(".nbt"))
+			paths.filter(f -> !Files.isDirectory(f) && isSupportedFile(f.getFileName().toString()))
 				.forEach(path -> {
 					if (Files.isDirectory(path))
 						return;
@@ -179,10 +177,8 @@ public class ClientSchematicLoader {
 		availableSchematics.sort((aT, bT) -> {
 			String a = aT.getString();
 			String b = bT.getString();
-			if (a.endsWith(".nbt"))
-				a = a.substring(0, a.length() - 4);
-			if (b.endsWith(".nbt"))
-				b = b.substring(0, b.length() - 4);
+			a = stripSupportedExtension(a);
+			b = stripSupportedExtension(b);
 			int aLength = a.length();
 			int bLength = b.length();
 			int minSize = Math.min(aLength, bLength);
@@ -232,6 +228,20 @@ public class ClientSchematicLoader {
 
 	public List<Component> getAvailableSchematics() {
 		return availableSchematics;
+	}
+
+	public static boolean isSupportedFile(String fileName) {
+		String lower = fileName.toLowerCase(Locale.ROOT);
+		return lower.endsWith(".nbt") || lower.endsWith(".litematic");
+	}
+
+	private static String stripSupportedExtension(String fileName) {
+		String lower = fileName.toLowerCase(Locale.ROOT);
+		if (lower.endsWith(".litematic"))
+			return fileName.substring(0, fileName.length() - ".litematic".length());
+		if (lower.endsWith(".nbt"))
+			return fileName.substring(0, fileName.length() - ".nbt".length());
+		return fileName;
 	}
 
 }

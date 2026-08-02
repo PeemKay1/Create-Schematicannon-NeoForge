@@ -1,40 +1,37 @@
 package com.bikerboys.schematicannon.foundation.utility;
 
-import com.bikerboys.schematicannon.AllPackets;
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 
-import net.createmod.catnip.animation.LerpedFloat;
-import net.createmod.catnip.animation.LerpedFloat.Chaser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent.Context;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class ServerSpeedProvider {
 
 	static int clientTimer = 0;
 	static int serverTimer = 0;
 	static boolean initialized = false;
-	static LerpedFloat modifier = LerpedFloat.linear();
+	static float modifier = 1;
+	static float targetModifier = 1;
 
 	public static void serverTick() {
 		serverTimer++;
 		if (serverTimer > getSyncInterval()) {
-			AllPackets.getChannel().send(PacketDistributor.ALL.noArg(), new Packet());
+			PacketDistributor.sendToAllPlayers(new Packet());
 			serverTimer = 0;
 		}
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	public static void clientTick() {
 		if (Minecraft.getInstance()
 			.hasSingleplayerServer()
 			&& Minecraft.getInstance()
 				.isPaused())
 			return;
-		modifier.tickChaser();
+		modifier += (targetModifier - modifier) * .25f;
+		if (Math.abs(targetModifier - modifier) < .001f)
+			modifier = targetModifier;
 		clientTimer++;
 	}
 
@@ -43,7 +40,7 @@ public class ServerSpeedProvider {
 	}
 
 	public static float get() {
-		return modifier.getValue();
+		return modifier;
 	}
 
 	public static class Packet extends SimplePacketBase {
@@ -56,7 +53,7 @@ public class ServerSpeedProvider {
 		public void write(FriendlyByteBuf buffer) {}
 
 		@Override
-		public boolean handle(Context context) {
+		public boolean handle(PacketContext context) {
 			context.enqueueWork(() -> {
 				if (!initialized) {
 					initialized = true;
@@ -64,7 +61,7 @@ public class ServerSpeedProvider {
 					return;
 				}
 				float target = ((float) getSyncInterval()) / Math.max(clientTimer, 1);
-				modifier.chase(Math.min(target, 1), .25, Chaser.EXP);
+				targetModifier = Math.min(target, 1);
 				// Set this to -1 because packets are processed before ticks.
 				// ServerSpeedProvider#clientTick will increment it to 0 at the end of this tick.
 				// Setting it to 0 causes consistent desync, as the client ends up counting too many ticks.

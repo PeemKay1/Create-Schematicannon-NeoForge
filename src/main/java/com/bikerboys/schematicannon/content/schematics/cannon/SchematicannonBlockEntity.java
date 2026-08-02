@@ -1,5 +1,6 @@
 package com.bikerboys.schematicannon.content.schematics.cannon;
 
+import com.bikerboys.schematicannon.AllBlockEntityTypes;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -7,9 +8,11 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.bikerboys.schematicannon.AllBlocks;
+import com.bikerboys.schematicannon.AllDataComponents;
 import com.bikerboys.schematicannon.AllItems;
 import com.bikerboys.schematicannon.AllSoundEvents;
 import com.bikerboys.schematicannon.content.schematics.SchematicPrinter;
+import com.bikerboys.schematicannon.content.schematics.SchematicItem;
 import com.bikerboys.schematicannon.content.schematics.requirement.ItemRequirement;
 import com.bikerboys.schematicannon.content.schematics.requirement.ItemRequirement.ItemUseType;
 import com.bikerboys.schematicannon.foundation.blockEntity.SmartBlockEntity;
@@ -19,13 +22,13 @@ import com.bikerboys.schematicannon.foundation.item.ItemHelper.ExtractionCountMo
 import com.bikerboys.schematicannon.foundation.utility.BlockHelper;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 
-import net.createmod.catnip.data.Iterate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
@@ -40,18 +43,20 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.piston.PistonHeadBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.wrapper.EmptyHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuProvider {
 
@@ -76,8 +81,9 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 	private boolean blockSkipped;
 
 	public BlockPos previousTarget;
-	public LinkedHashSet<LazyOptional<IItemHandler>> attachedInventories;
+	public LinkedHashSet<IItemHandler> attachedInventories;
 	public List<LaunchedItem> flyingBlocks;
+	private ListTag pendingLegacyFlyingBlocks;
 	public MaterialChecklist checklist;
 
 	// Gui information
@@ -114,75 +120,85 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 	public void findInventories() {
 		hasCreativeCrate = false;
 		attachedInventories.clear();
-		for (Direction facing : Iterate.directions) {
+		for (Direction facing : Direction.values()) {
 
 			if (!level.isLoaded(worldPosition.relative(facing)))
 				continue;
 
 
 
-			BlockEntity blockEntity = level.getBlockEntity(worldPosition.relative(facing));
-			if (blockEntity != null) {
-				LazyOptional<IItemHandler> capability =
-					blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, facing.getOpposite());
-				if (capability.isPresent()) {
-					attachedInventories.add(capability);
-				}
-			}
+			ResourceHandler<ItemResource> capability = level.getCapability(Capabilities.Item.BLOCK,
+				worldPosition.relative(facing), facing.getOpposite());
+			if (capability != null)
+				attachedInventories.add(IItemHandler.of(capability));
 		}
 	}
 
 	@Override
 	protected void read(CompoundTag compound, boolean clientPacket) {
-		if (!clientPacket) {
-			inventory.deserializeNBT(compound.getCompound("Inventory"));
-		}
-
 		// Gui information
-		statusMsg = compound.getString("Status");
-		schematicProgress = compound.getFloat("Progress");
-		bookPrintingProgress = compound.getFloat("PaperProgress");
-		remainingFuel = compound.getInt("RemainingFuel");
-		String stateString = compound.getString("State");
-		state = stateString.isEmpty() ? State.STOPPED : State.valueOf(compound.getString("State"));
-		blocksPlaced = compound.getInt("AmountPlaced");
-		blocksToPlace = compound.getInt("AmountToPlace");
-
-		missingItem = null;
-		if (compound.contains("MissingItem"))
-			missingItem = ItemStack.of(compound.getCompound("MissingItem"));
+		statusMsg = compound.getStringOr("Status", "idle");
+		schematicProgress = compound.getFloatOr("Progress", 0);
+		bookPrintingProgress = compound.getFloatOr("PaperProgress", 0);
+		remainingFuel = compound.getIntOr("RemainingFuel", 0);
+		String stateString = compound.getStringOr("State", "");
+		state = stateString.isEmpty() ? State.STOPPED : State.valueOf(stateString);
+		blocksPlaced = compound.getIntOr("AmountPlaced", 0);
+		blocksToPlace = compound.getIntOr("AmountToPlace", 0);
 
 		// Settings
-		CompoundTag options = compound.getCompound("Options");
-		replaceMode = options.getInt("ReplaceMode");
-		skipMissing = options.getBoolean("SkipMissing");
-		replaceBlockEntities = options.getBoolean("ReplaceTileEntities");
+		CompoundTag options = compound.getCompoundOrEmpty("Options");
+		replaceMode = options.getIntOr("ReplaceMode", 0);
+		skipMissing = options.getBooleanOr("SkipMissing", false);
+		replaceBlockEntities = options.getBooleanOr("ReplaceTileEntities", false);
 
 		// Printer & Flying Blocks
 		if (compound.contains("Printer"))
-			printer.fromTag(compound.getCompound("Printer"), clientPacket);
-		if (compound.contains("FlyingBlocks"))
-			readFlyingBlocks(compound);
+			printer.fromTag(compound.getCompoundOrEmpty("Printer"), clientPacket);
+		if (compound.contains("FlyingBlocks")) {
+			ListTag blocks = compound.getListOrEmpty("FlyingBlocks");
+			if (level != null)
+				readFlyingBlocks(blocks, level.registryAccess());
+			else
+				pendingLegacyFlyingBlocks = blocks.copy();
+		}
 
-		defaultYaw = compound.getFloat("DefaultYaw");
+		defaultYaw = compound.getFloatOr("DefaultYaw", 0);
 
 		super.read(compound, clientPacket);
 	}
 
-	protected void readFlyingBlocks(CompoundTag compound) {
-		ListTag tagBlocks = compound.getList("FlyingBlocks", 10);
-		if (tagBlocks.isEmpty())
+	protected void readFlyingBlocks(ListTag tagBlocks, net.minecraft.core.HolderLookup.Provider registries) {
+		List<LaunchedItem> launchedItems = new LinkedList<>();
+		for (int i = 0; i < tagBlocks.size(); i++) {
+			CompoundTag tag = tagBlocks.getCompoundOrEmpty(i);
+			boolean legacy = tag.get("Target") instanceof CompoundTag;
+			if (legacy)
+				launchedItems.add(LaunchedItem.fromLegacyNBT(tag, registries));
+			else
+				launchedItems.add(LaunchedItem.from(
+					TagValueInput.create(ProblemReporter.DISCARDING, registries, tag)));
+		}
+		readFlyingBlocks(launchedItems);
+	}
+
+	public SchematicannonBlockEntity(BlockPos pos, BlockState state) {
+		this(AllBlockEntityTypes.SCHEMATICANNON.get(), pos, state);
+	}
+
+	protected void readFlyingBlocks(Iterable<LaunchedItem> launchedItems) {
+		boolean empty = !launchedItems.iterator().hasNext();
+		if (empty)
 			flyingBlocks.clear();
 
 		boolean pastDead = false;
-
-		for (int i = 0; i < tagBlocks.size(); i++) {
-			CompoundTag c = tagBlocks.getCompound(i);
-			LaunchedItem launched = LaunchedItem.fromNBT(c, blockHolderGetter());
+		int i = 0;
+		for (LaunchedItem launched : launchedItems) {
+			int index = i++;
 			BlockPos readBlockPos = launched.target;
 
 			// Always write to Server block entity
-			if (level == null || !level.isClientSide) {
+			if (level == null || !level.isClientSide()) {
 				flyingBlocks.add(launched);
 				continue;
 			}
@@ -195,7 +211,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 			pastDead = true;
 
 			// Add new server side blocks
-			if (i >= flyingBlocks.size()) {
+			if (index >= flyingBlocks.size()) {
 				flyingBlocks.add(launched);
 				continue;
 			}
@@ -207,7 +223,6 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 	@Override
 	public void write(CompoundTag compound, boolean clientPacket) {
 		if (!clientPacket) {
-			compound.put("Inventory", inventory.serializeNBT());
 			if (state == State.RUNNING) {
 				compound.putBoolean("Running", true);
 			}
@@ -222,9 +237,6 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 		compound.putInt("AmountPlaced", blocksPlaced);
 		compound.putInt("AmountToPlace", blocksToPlace);
 
-		if (missingItem != null)
-			compound.put("MissingItem", missingItem.serializeNBT());
-
 		// Settings
 		CompoundTag options = new CompoundTag();
 		options.putInt("ReplaceMode", replaceMode);
@@ -237,14 +249,46 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 		printer.write(printerData);
 		compound.put("Printer", printerData);
 
-		ListTag tagFlyingBlocks = new ListTag();
-		for (LaunchedItem b : flyingBlocks)
-			tagFlyingBlocks.add(b.serializeNBT());
-		compound.put("FlyingBlocks", tagFlyingBlocks);
+		if (clientPacket && level != null) {
+			ListTag tagFlyingBlocks = new ListTag();
+			for (LaunchedItem b : flyingBlocks) {
+				TagValueOutput output =
+					TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+				b.write(output);
+				tagFlyingBlocks.add(output.buildResult());
+			}
+			compound.put("FlyingBlocks", tagFlyingBlocks);
+		}
 
 		compound.putFloat("DefaultYaw", defaultYaw);
 
 		super.write(compound, clientPacket);
+	}
+
+	@Override
+	protected void readValue(ValueInput input) {
+		input.readChild("Inventory", inventory);
+		missingItem = input.read("MissingItem", ItemStack.CODEC).orElse(null);
+		input.childrenList("FlyingBlocks")
+			.ifPresent(blocks -> readFlyingBlocks(blocks.stream()
+				.map(LaunchedItem::from)
+				.toList()));
+		if (pendingLegacyFlyingBlocks != null) {
+			readFlyingBlocks(pendingLegacyFlyingBlocks, input.lookup());
+			pendingLegacyFlyingBlocks = null;
+		}
+	}
+
+	@Override
+	protected void writeValue(ValueOutput output) {
+		output.putChild("Inventory", inventory);
+		if (missingItem != null)
+			output.store("MissingItem", ItemStack.CODEC, missingItem);
+		else
+			output.discard("MissingItem");
+		ValueOutput.ValueOutputList blocks = output.childrenList("FlyingBlocks");
+		for (LaunchedItem launched : flyingBlocks)
+			launched.write(blocks.addChild());
 	}
 
 	@Override
@@ -260,7 +304,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 		previousTarget = printer.getCurrentTarget();
 		tickFlyingBlocks();
 
-		if (level.isClientSide)
+		if (level.isClientSide())
 			return;
 
 		// Update Fuel and Paper
@@ -421,15 +465,17 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 	}
 
 	protected void initializePrinter(ItemStack blueprint) {
-		if (!blueprint.hasTag()) {
+		boolean startAfterLoading = state == State.RUNNING;
+		if (!blueprint.has(AllDataComponents.SCHEMATIC_FILE)) {
 			state = State.STOPPED;
 			statusMsg = "schematicInvalid";
 			sendUpdate = true;
 			return;
 		}
 
-		if (!blueprint.getTag()
-			.getBoolean("Deployed")) {
+		if (!blueprint.getOrDefault(AllDataComponents.SCHEMATIC_DEPLOYED, false)
+			|| blueprint.getOrDefault(AllDataComponents.SCHEMATIC_PLACEMENT_VERSION, 0)
+				< SchematicItem.PLACEMENT_FORMAT_VERSION) {
 			state = State.STOPPED;
 			statusMsg = "schematicNotPlaced";
 			sendUpdate = true;
@@ -468,8 +514,8 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 			return;
 		}
 
-		state = State.PAUSED;
-		statusMsg = "ready";
+		state = startAfterLoading ? State.RUNNING : State.PAUSED;
+		statusMsg = startAfterLoading ? "running" : "ready";
 		updateChecklist();
 		sendUpdate = true;
 		blocksToPlace += blocksPlaced;
@@ -484,14 +530,11 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 		if (hasCreativeCrate)
 			return true;
 
-		attachedInventories.removeIf(cap -> !cap.isPresent());
-
 		ItemUseType usage = required.usage;
 
 		// Find and apply damage
 		if (usage == ItemUseType.DAMAGE) {
-			for (LazyOptional<IItemHandler> cap : attachedInventories) {
-				IItemHandler itemHandler = cap.orElse(EmptyHandler.INSTANCE);
+			for (IItemHandler itemHandler : attachedInventories) {
 				for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
 					ItemStack extractItem = itemHandler.extractItem(slot, 1, true);
 					if (!required.matches(extractItem))
@@ -521,8 +564,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 		// Find and remove
 		boolean success = false;
 		int amountFound = 0;
-		for (LazyOptional<IItemHandler> cap : attachedInventories) {
-			IItemHandler itemHandler = cap.orElse(EmptyHandler.INSTANCE);
+		for (IItemHandler itemHandler : attachedInventories) {
 			amountFound += ItemHelper
 				.extract(itemHandler, required::matches, ExtractionCountMode.UPTO,
 					required.stack.getCount(), true)
@@ -537,8 +579,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 
 		if (!simulate && success) {
 			amountFound = 0;
-			for (LazyOptional<IItemHandler> cap : attachedInventories) {
-				IItemHandler itemHandler = cap.orElse(EmptyHandler.INSTANCE);
+			for (IItemHandler itemHandler : attachedInventories) {
 				amountFound += ItemHelper
 					.extract(itemHandler, required::matches, ExtractionCountMode.UPTO,
 						required.stack.getCount(), false)
@@ -645,8 +686,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 				.shrink(1);
 		else {
 			boolean externalGunpowderFound = false;
-			for (LazyOptional<IItemHandler> cap : attachedInventories) {
-				IItemHandler itemHandler = cap.orElse(EmptyHandler.INSTANCE);
+			for (IItemHandler itemHandler : attachedInventories) {
 				if (ItemHelper.extract(itemHandler, stack -> inventory.isItemValid(4, stack), 1, false)
 					.isEmpty())
 					continue;
@@ -659,9 +699,8 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 
 		remainingFuel += getShotsPerGunpowder();
 		if (statusMsg.equals("noGunpowder")) {
-			if (blocksPlaced > 0)
-				state = State.RUNNING;
-			statusMsg = "ready";
+			state = State.RUNNING;
+			statusMsg = "running";
 		}
 		sendUpdate = true;
 	}
@@ -700,7 +739,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 
 			dontUpdateChecklist = true;
 			ItemStack extractItem = inventory.extractItem(BookInput, 1, false);
-			ItemStack stack = AllBlocks.CLIPBOARD.isIn(extractItem) ? checklist.createWrittenClipboard()
+			ItemStack stack = extractItem.is(AllBlocks.CLIPBOARD_ITEM.get()) ? checklist.createWrittenClipboard()
 				: checklist.createWrittenBook();
 			stack.setCount(inventory.getStackInSlot(BookOutput)
 				.getCount() + 1);
@@ -741,7 +780,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 
 	public void sendToMenu(FriendlyByteBuf buffer) {
 		buffer.writeBlockPos(getBlockPos());
-		buffer.writeNbt(getUpdateTag());
+		buffer.writeNbt(writeClient(new CompoundTag()));
 	}
 
 	@Override
@@ -767,10 +806,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 
 		checklist.gathered.clear();
 		findInventories();
-		for (LazyOptional<IItemHandler> cap : attachedInventories) {
-			if (!cap.isPresent())
-				continue;
-			IItemHandler inventory = cap.orElse(EmptyHandler.INSTANCE);
+		for (IItemHandler inventory : attachedInventories) {
 			for (int slot = 0; slot < inventory.getSlots(); slot++) {
 				ItemStack stackInSlot = inventory.getStackInSlot(slot);
 				if (inventory.extractItem(slot, 1, true)
@@ -792,9 +828,10 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 	}
 
 	@Override
-	@OnlyIn(Dist.CLIENT)
-	public AABB getRenderBoundingBox() {
-		return INFINITE_EXTENT_AABB;
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null && !level.isClientSide())
+			ItemHelper.dropContents(level, pos, inventory);
+		super.preRemoveSideEffects(pos, state);
 	}
 
 	public enum State {

@@ -4,15 +4,13 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.bikerboys.schematicannon.AllKeys;
 import com.bikerboys.schematicannon.content.schematics.client.tools.ToolType;
 import com.bikerboys.schematicannon.foundation.gui.AllGuiTextures;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -34,7 +32,6 @@ public class ToolSelectionScreen extends Screen {
 
 	public ToolSelectionScreen(List<ToolType> tools, Consumer<ToolType> callback) {
 		super(Component.literal("Tool Selection"));
-		this.minecraft = Minecraft.getInstance();
 		this.tools = tools;
 		this.callback = callback;
 		focused = false;
@@ -45,7 +42,7 @@ public class ToolSelectionScreen extends Screen {
 		callback.accept(tools.get(selection));
 
 		w = Math.max(tools.size() * 50 + 30, 220);
-		h = 30;
+		h = 42;
 	}
 
 	public void setSelectedElement(ToolType tool) {
@@ -57,25 +54,18 @@ public class ToolSelectionScreen extends Screen {
 	public void cycle(int direction) {
 		selection += (direction < 0) ? 1 : -1;
 		selection = (selection + tools.size()) % tools.size();
+		// Apply the highlighted tool while scrolling. Waiting for the modifier key
+		// to be released made the 26.2 menu feel delayed and left the old tool active.
+		callback.accept(tools.get(selection));
 	}
 
-	private void draw(GuiGraphics graphics, float partialTicks) {
-		PoseStack matrixStack = graphics.pose();
+	private void draw(GuiGraphicsExtractor graphics, float partialTicks) {
 		Window mainWindow = minecraft.getWindow();
-		if (!initialized)
-			init(minecraft, mainWindow.getGuiScaledWidth(), mainWindow.getGuiScaledHeight());
-
 		int x = (mainWindow.getGuiScaledWidth() - w) / 2 + 15;
-		int y = mainWindow.getGuiScaledHeight() - h - 75;
-
-		matrixStack.pushPose();
-		matrixStack.translate(0, -yOffset, focused ? 100 : 0);
+		int y = mainWindow.getGuiScaledHeight() - h - 75 - (int) yOffset;
 
 		AllGuiTextures gray = AllGuiTextures.HUD_BACKGROUND;
-		RenderSystem.enableBlend();
-		RenderSystem.setShaderColor(1, 1, 1, focused ? 7 / 8f : 1 / 2f);
-
-		graphics.blit(gray.location, x - 15, y, gray.getStartX(), gray.getStartY(), w, h, gray.getWidth(), gray.getHeight());
+		graphics.fill(x - 15, y, x - 15 + w, y + h, focused ? 0xdd202020 : 0x99202020);
 
 		float toolTipAlpha = yOffset / 10;
 		List<Component> toolTip = tools.get(selection)
@@ -83,63 +73,43 @@ public class ToolSelectionScreen extends Screen {
 		int stringAlphaComponent = ((int) (toolTipAlpha * 0xFF)) << 24;
 
 		if (toolTipAlpha > 0.25f) {
-			RenderSystem.setShaderColor(.7f, .7f, .8f, toolTipAlpha);
-			graphics.blit(gray.location, x - 15, y + 33, gray.getStartX(), gray.getStartY(), w, h + 22, gray.getWidth(), gray.getHeight());
-			RenderSystem.setShaderColor(1, 1, 1, 1);
+			int descriptionY = y + h + 3;
+			graphics.fill(x - 15, descriptionY, x - 15 + w, descriptionY + 64, 0xdd202020);
 
 			if (toolTip.size() > 0)
-				graphics.drawString(font, toolTip.get(0), x - 10, y + 38, 0xEEEEEE + stringAlphaComponent, false);
+				graphics.text(font, toolTip.get(0), x - 10, descriptionY + 5, 0xEEEEEE + stringAlphaComponent, false);
 			if (toolTip.size() > 1)
-				graphics.drawString(font, toolTip.get(1), x - 10, y + 50, 0xCCDDFF + stringAlphaComponent, false);
+				graphics.text(font, toolTip.get(1), x - 10, descriptionY + 17, 0xCCDDFF + stringAlphaComponent, false);
 			if (toolTip.size() > 2)
-				graphics.drawString(font, toolTip.get(2), x - 10, y + 60, 0xCCDDFF + stringAlphaComponent, false);
+				graphics.text(font, toolTip.get(2), x - 10, descriptionY + 29, 0xCCDDFF + stringAlphaComponent, false);
 			if (toolTip.size() > 3)
-				graphics.drawString(font, toolTip.get(3), x - 10, y + 72, 0xCCCCDD + stringAlphaComponent, false);
+				graphics.text(font, toolTip.get(3), x - 10, descriptionY + 41, 0xCCCCDD + stringAlphaComponent, false);
 		}
 
-		RenderSystem.setShaderColor(1, 1, 1, 1);
 		if (tools.size() > 1) {
 			String keyName = AllKeys.TOOL_MENU.getBoundKey();
 			int width = minecraft.getWindow()
 				.getGuiScaledWidth();
 			if (!focused)
-				graphics.drawCenteredString(minecraft.font, CreateLang.translateDirect(holdToFocus, keyName), width / 2,
-					y - 10, 0xCCDDFF);
+				graphics.centeredText(minecraft.font, CreateLang.translateDirect(holdToFocus, keyName), width / 2,
+					y - 10, 0xFFCCDDFF);
 			else
-				graphics.drawCenteredString(minecraft.font, scrollToCycle, width / 2, y - 10, 0xCCDDFF);
+				graphics.centeredText(minecraft.font, scrollToCycle, width / 2, y - 10, 0xFFCCDDFF);
 		} else {
 			x += 65;
 		}
 
 
 		for (int i = 0; i < tools.size(); i++) {
-			RenderSystem.enableBlend();
-			matrixStack.pushPose();
-
-			float alpha = focused ? 1 : .2f;
-			if (i == selection) {
-				matrixStack.translate(0, -10, 0);
-				RenderSystem.setShaderColor(1, 1, 1, 1);
-				graphics.drawCenteredString(minecraft.font, tools.get(i)
-					.getDisplayName()
-					.getString(), x + i * 50 + 24, y + 28, 0xCCDDFF);
-				alpha = 1;
-			}
-			RenderSystem.setShaderColor(0, 0, 0, alpha);
+			if (i == selection)
+				graphics.fill(x + i * 50 + 14, y + 2, x + i * 50 + 34, y + 22, 0x556886C5);
 			tools.get(i)
 				.getIcon()
-				.render(graphics, x + i * 50 + 16, y + 12);
-			RenderSystem.setShaderColor(1, 1, 1, alpha);
-			tools.get(i)
-				.getIcon()
-				.render(graphics, x + i * 50 + 16, y + 11);
-
-			matrixStack.popPose();
+				.render(graphics, x + i * 50 + 16, y + 4);
 		}
-
-		RenderSystem.setShaderColor(1, 1, 1, 1);
-		RenderSystem.disableBlend();
-		matrixStack.popPose();
+		graphics.centeredText(minecraft.font, tools.get(selection)
+			.getDisplayName()
+			.getString(), x - 15 + w / 2, y + 28, 0xFFCCDDFF);
 	}
 
 	public void update() {
@@ -149,7 +119,7 @@ public class ToolSelectionScreen extends Screen {
 			yOffset *= .9f;
 	}
 
-	public void renderPassive(GuiGraphics graphics, float partialTicks) {
+	public void renderPassive(GuiGraphicsExtractor graphics, float partialTicks) {
 		draw(graphics, partialTicks);
 	}
 

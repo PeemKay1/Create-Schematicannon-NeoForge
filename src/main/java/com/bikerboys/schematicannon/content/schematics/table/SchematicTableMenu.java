@@ -13,7 +13,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 
@@ -22,6 +22,10 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 
 	public SchematicTableMenu(MenuType<?> type, int id, Inventory inv, FriendlyByteBuf extraData) {
 		super(type, id, inv, extraData);
+	}
+
+	public SchematicTableMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
+		this(AllMenuTypes.SCHEMATIC_TABLE.get(), id, inv, extraData);
 	}
 
 	public SchematicTableMenu(MenuType<?> type, int id, Inventory inv, SchematicTableBlockEntity be) {
@@ -71,8 +75,8 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 		inputSlot = new SlotItemHandler(contentHolder.inventory, 0, 21, 59) {
 			@Override
 			public boolean mayPlace(ItemStack stack) {
-				return AllItems.EMPTY_SCHEMATIC.isIn(stack) || AllItems.SCHEMATIC_AND_QUILL.isIn(stack)
-						|| AllItems.SCHEMATIC.isIn(stack);
+				return stack.is(AllItems.EMPTY_SCHEMATIC.get()) || stack.is(AllItems.SCHEMATIC_AND_QUILL.get())
+						|| stack.is(AllItems.SCHEMATIC.get());
 			}
 		};
 

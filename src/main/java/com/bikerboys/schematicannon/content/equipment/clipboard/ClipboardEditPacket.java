@@ -3,8 +3,10 @@ package com.bikerboys.schematicannon.content.equipment.clipboard;
 import javax.annotation.Nullable;
 
 import com.bikerboys.schematicannon.AllBlocks;
+import com.bikerboys.schematicannon.AllDataComponents;
 import com.bikerboys.schematicannon.foundation.CreateNBTProcessors;
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -13,7 +15,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public class ClipboardEditPacket extends SimplePacketBase {
 
@@ -44,7 +45,7 @@ public class ClipboardEditPacket extends SimplePacketBase {
 	}
 
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		context.enqueueWork(() -> {
 			// Get rid of any unsafe data
 			data = CreateNBTProcessors.clipboardProcessor(data);
@@ -58,7 +59,8 @@ public class ClipboardEditPacket extends SimplePacketBase {
 				if (!targetedBlock.closerThan(sender.blockPosition(), 20))
 					return;
 				if (world.getBlockEntity(targetedBlock) instanceof ClipboardBlockEntity cbe) {
-					cbe.dataContainer.setTag(data.isEmpty() ? null : data);
+					if (data.isEmpty()) cbe.dataContainer.remove(AllDataComponents.CLIPBOARD_DATA);
+					else cbe.dataContainer.set(AllDataComponents.CLIPBOARD_DATA, data.copy());
 					cbe.onEditedBy(sender);
 				}
 				return;
@@ -66,9 +68,10 @@ public class ClipboardEditPacket extends SimplePacketBase {
 
 			ItemStack itemStack = sender.getInventory()
 				.getItem(hotbarSlot);
-			if (!AllBlocks.CLIPBOARD.isIn(itemStack))
+			if (!itemStack.is(AllBlocks.CLIPBOARD_ITEM.get()))
 				return;
-			itemStack.setTag(data.isEmpty() ? null : data);
+			if (data.isEmpty()) itemStack.remove(AllDataComponents.CLIPBOARD_DATA);
+			else itemStack.set(AllDataComponents.CLIPBOARD_DATA, data.copy());
 		});
 
 		return true;

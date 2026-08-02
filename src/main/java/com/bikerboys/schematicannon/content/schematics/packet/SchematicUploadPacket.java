@@ -3,11 +3,11 @@ package com.bikerboys.schematicannon.content.schematics.packet;
 import com.bikerboys.schematicannon.Schematicannon;
 import com.bikerboys.schematicannon.content.schematics.table.SchematicTableMenu;
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public class SchematicUploadPacket extends SimplePacketBase {
 
@@ -63,7 +63,7 @@ public class SchematicUploadPacket extends SimplePacketBase {
 	}
 
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null)

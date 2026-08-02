@@ -5,7 +5,7 @@ import com.bikerboys.schematicannon.AllItems;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class SchematicannonInventory extends ItemStackHandler {
 	private final SchematicannonBlockEntity blockEntity;
@@ -25,11 +25,11 @@ public class SchematicannonInventory extends ItemStackHandler {
 	public boolean isItemValid(int slot, ItemStack stack) {
 		switch (slot) {
 		case 0: // Blueprint Slot
-			return AllItems.SCHEMATIC.isIn(stack);
+			return stack.is(AllItems.SCHEMATIC.get());
 		case 1: // Blueprint output
 			return false;
 		case 2: // Book input
-			return AllBlocks.CLIPBOARD.isIn(stack) || stack.is(Items.BOOK)
+			return stack.is(AllBlocks.CLIPBOARD_ITEM.get()) || stack.is(Items.BOOK)
 				|| stack.is(Items.WRITTEN_BOOK);
 		case 3: // Material List output
 			return false;

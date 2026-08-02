@@ -6,26 +6,20 @@ import org.slf4j.Logger;
 
 import com.bikerboys.schematicannon.content.schematics.ServerSchematicLoader;
 import com.bikerboys.schematicannon.foundation.CreateNBTProcessors;
-import com.bikerboys.schematicannon.foundation.data.SchematicannonRegistrate;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mojang.logging.LogUtils;
 
-import net.createmod.catnip.lang.LangBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.Level;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
 @Mod(Schematicannon.ID)
 public class Schematicannon {
@@ -47,48 +41,34 @@ public class Schematicannon {
 	public static final Random RANDOM = new Random();
 
 
-	private static final SchematicannonRegistrate REGISTRATE = SchematicannonRegistrate.create(ID)
-		.defaultCreativeTab(CreativeModeTabs.REDSTONE_BLOCKS);
-
 	public static final ServerSchematicLoader SCHEMATIC_RECEIVER = new ServerSchematicLoader();
 
 
-	public Schematicannon() {
-		onCtor();
+	public Schematicannon(IEventBus modEventBus, ModContainer modContainer) {
+		onCtor(modEventBus);
 	}
 
-	public static void onCtor() {
-		LOGGER.info("{} {} initializing! Commit hash: {}", NAME, com.bikerboys.schematicannon.CreateBuildInfo.VERSION, com.bikerboys.schematicannon.CreateBuildInfo.GIT_COMMIT);
+	public static void onCtor(IEventBus modEventBus) {
+		LOGGER.info("{} {} initializing! Commit hash: {}", NAME, SchematicannonBuildInfo.VERSION, SchematicannonBuildInfo.GIT_COMMIT);
 
 
-
-		ModLoadingContext modLoadingContext = ModLoadingContext.get();
-
-		IEventBus modEventBus = FMLJavaModLoadingContext.get()
-			.getModEventBus();
-		IEventBus forgeEventBus = MinecraftForge.EVENT_BUS;
-
-		REGISTRATE.registerEventListeners(modEventBus);
 
 		AllSoundEvents.prepare();
-		AllBlocks.register();
-		AllItems.register();
-		AllMenuTypes.register();
-		AllBlockEntityTypes.register();
+		AllBlocks.register(modEventBus);
+		AllItems.register(modEventBus);
+		AllCreativeModeTabs.register(modEventBus);
+		AllDataComponents.register(modEventBus);
+		AllMenuTypes.register(modEventBus);
+		AllBlockEntityTypes.register(modEventBus);
 		AllParticleTypes.register(modEventBus);
 		AllStructureProcessorTypes.register(modEventBus);
-		AllPackets.registerPackets();
+		modEventBus.addListener(AllPackets::register);
 
 
 		AllSchematicStateFilters.registerDefaults();
 
-		ForgeMod.enableMilkFluid();
-
-
 		modEventBus.addListener(Schematicannon::init);
 		modEventBus.addListener(AllSoundEvents::register);
-
-		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> SchematicannonClient.onCtorClient(modEventBus, forgeEventBus));
 
 	}
 
@@ -99,17 +79,7 @@ public class Schematicannon {
 	}
 
 
-	public static LangBuilder lang() {
-		return new LangBuilder(ID);
-	}
-
-	public static ResourceLocation asResource(String path) {
-		return new ResourceLocation(ID, path);
-	}
-
-	public static SchematicannonRegistrate registrate() {
-		if (!STACK_WALKER.getCallerClass().getPackageName().startsWith("com.bikerboys.schematicannon"))
-			throw new UnsupportedOperationException("Other mods are not permitted to use schematicannons registrate instance.");
-		return REGISTRATE;
+	public static Identifier asResource(String path) {
+		return Identifier.fromNamespaceAndPath(ID, path);
 	}
 }

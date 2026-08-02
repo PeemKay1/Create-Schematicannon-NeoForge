@@ -2,7 +2,7 @@ package com.bikerboys.schematicannon.foundation.particle;
 
 import com.bikerboys.schematicannon.Schematicannon;
 
-import net.createmod.catnip.math.VecHelper;
+import com.bikerboys.schematicannon.foundation.utility.VecHelper;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 
 public class AirParticle extends SimpleAnimatedParticle {
@@ -31,7 +32,7 @@ public class AirParticle extends SimpleAnimatedParticle {
 
 	protected AirParticle(ClientLevel world, AirParticleData data, double x, double y, double z, double dx, double dy,
 						  double dz, SpriteSet sprite) {
-		super(world, x, y, z, sprite, world.random.nextFloat() * .5f);
+		super(world, x, y, z, sprite, world.getRandom().nextFloat() * .5f);
 		quadSize *= 0.75F;
 		hasPhysics = false;
 
@@ -61,7 +62,7 @@ public class AirParticle extends SimpleAnimatedParticle {
 	}
 
 	public ParticleRenderType getRenderType() {
-		return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+		return ParticleRenderType.SINGLE_QUADS;
 	}
 
 	@Override
@@ -92,7 +93,7 @@ public class AirParticle extends SimpleAnimatedParticle {
 
 	public int getLightColor(float partialTick) {
 		BlockPos blockpos = BlockPos.containing(this.x, this.y, this.z);
-		return this.level.isLoaded(blockpos) ? LevelRenderer.getLightColor(level, blockpos) : 0;
+		return this.level.isLoaded(blockpos) ? 0x00f000f0 : 0;
 	}
 
 	private void selectSprite(int index) {
@@ -107,7 +108,7 @@ public class AirParticle extends SimpleAnimatedParticle {
 		}
 
 		public Particle createParticle(AirParticleData data, ClientLevel worldIn, double x, double y, double z, double xSpeed,
-			double ySpeed, double zSpeed) {
+			double ySpeed, double zSpeed, RandomSource random) {
 			return new AirParticle(worldIn, data, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
 		}
 	}

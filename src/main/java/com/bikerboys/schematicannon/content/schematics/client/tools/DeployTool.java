@@ -2,14 +2,13 @@ package com.bikerboys.schematicannon.content.schematics.client.tools;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.bikerboys.schematicannon.AllKeys;
+import com.bikerboys.schematicannon.AllDataComponents;
 import com.bikerboys.schematicannon.content.schematics.client.SchematicTransformation;
 
-import dev.engine_room.flywheel.lib.transform.TransformStack;
-import net.createmod.catnip.render.SuperRenderTypeBuffer;
-import net.createmod.catnip.animation.AnimationTickHolder;
-import net.createmod.catnip.outliner.AABBOutline;
+import com.bikerboys.schematicannon.foundation.render.SuperRenderTypeBuffer;
+import com.bikerboys.schematicannon.foundation.utility.AnimationTickHolder;
+import com.bikerboys.schematicannon.foundation.render.AABBOutline;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
@@ -59,12 +58,11 @@ public class DeployTool extends PlacementToolBase {
 		Vec3 origin = new Vec3(xOrigin, 0, zOrigin);
 
 		ms.translate(x - centerX - camera.x, y - camera.y, z - centerZ - camera.z);
-		TransformStack.of(ms)
-			.translate(origin)
-			.translate(rotationOffset)
-			.rotateYDegrees(transformation.getCurrentRotation())
-			.translateBack(rotationOffset)
-			.translateBack(origin);
+		ms.translate(origin);
+		ms.translate(rotationOffset);
+		ms.mulPose(com.mojang.math.Axis.YP.rotationDegrees(transformation.getCurrentRotation()));
+		ms.translate(rotationOffset.scale(-1));
+		ms.translate(origin.scale(-1));
 
 		AABBOutline outline = schematicHandler.getOutline();
 		outline.render(ms, buffer, Vec3.ZERO, pt);
@@ -92,10 +90,8 @@ public class DeployTool extends PlacementToolBase {
 
 		ItemStack item = schematicHandler.getActiveSchematicItem();
 		if (item != null) {
-			item.getTag()
-				.putBoolean("Deployed", true);
-			item.getTag()
-				.put("Anchor", NbtUtils.writeBlockPos(target));
+			item.set(AllDataComponents.SCHEMATIC_DEPLOYED, true);
+			item.set(AllDataComponents.SCHEMATIC_ANCHOR, target);
 			schematicHandler.getTransformation()
 				.startAt(target);
 		}

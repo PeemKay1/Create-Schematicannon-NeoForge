@@ -3,7 +3,8 @@ package com.bikerboys.schematicannon.content.schematics.table;
 import com.bikerboys.schematicannon.AllBlockEntityTypes;
 import com.bikerboys.schematicannon.AllShapes;
 import com.bikerboys.schematicannon.foundation.block.IBE;
-import com.bikerboys.schematicannon.foundation.item.ItemHelper;
+
+import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,16 +20,20 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
 
 public class SchematicTableBlock extends HorizontalDirectionalBlock implements IBE<SchematicTableBlockEntity> {
+	public static final MapCodec<SchematicTableBlock> CODEC = simpleCodec(SchematicTableBlock::new);
 
 	public SchematicTableBlock(Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+		return CODEC;
 	}
 
 	@Override
@@ -59,22 +64,13 @@ public class SchematicTableBlock extends HorizontalDirectionalBlock implements I
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level worldIn, BlockPos pos, Player player, InteractionHand handIn,
+	protected InteractionResult useWithoutItem(BlockState state, Level worldIn, BlockPos pos, Player player,
 			BlockHitResult hit) {
-		if (worldIn.isClientSide)
+		if (worldIn.isClientSide())
 			return InteractionResult.SUCCESS;
-		withBlockEntityDo(worldIn, pos,
-				be -> NetworkHooks.openScreen((ServerPlayer) player, be, be::sendToMenu));
+		if (player instanceof ServerPlayer serverPlayer)
+			withBlockEntityDo(worldIn, pos, be -> serverPlayer.openMenu(be, be::sendToMenu));
 		return InteractionResult.SUCCESS;
-	}
-
-	@Override
-	public void onRemove(BlockState state, Level worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
-		if (!state.hasBlockEntity() || state.getBlock() == newState.getBlock())
-			return;
-
-		withBlockEntityDo(worldIn, pos, be -> ItemHelper.dropContents(worldIn, pos, be.inventory));
-		worldIn.removeBlockEntity(pos);
 	}
 
 	@Override
@@ -85,11 +81,6 @@ public class SchematicTableBlock extends HorizontalDirectionalBlock implements I
 	@Override
 	public BlockEntityType<? extends SchematicTableBlockEntity> getBlockEntityType() {
 		return AllBlockEntityTypes.SCHEMATIC_TABLE.get();
-	}
-
-	@Override
-	public boolean isPathfindable(BlockState state, BlockGetter reader, BlockPos pos, PathComputationType type) {
-		return false;
 	}
 
 }

@@ -3,8 +3,7 @@ package com.bikerboys.schematicannon.foundation.gui.widget;
 import com.google.common.collect.ImmutableList;
 import com.bikerboys.schematicannon.foundation.gui.AllGuiTextures;
 
-import net.createmod.catnip.gui.widget.AbstractSimiWidget;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 public class Indicator extends AbstractSimiWidget {
@@ -18,7 +17,7 @@ public class Indicator extends AbstractSimiWidget {
 	}
 
 	@Override
-	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks ) {
+	protected void doRender(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks ) {
 		if (!visible)
 			return;
 		AllGuiTextures toDraw;

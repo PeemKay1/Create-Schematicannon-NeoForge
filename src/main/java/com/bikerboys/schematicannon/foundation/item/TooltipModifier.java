@@ -6,7 +6,7 @@ import com.bikerboys.schematicannon.api.registry.SimpleRegistry;
 
 import net.minecraft.world.item.Item;
 
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 @FunctionalInterface
 public interface TooltipModifier {

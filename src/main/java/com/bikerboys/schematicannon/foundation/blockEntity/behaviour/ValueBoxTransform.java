@@ -6,9 +6,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import dev.engine_room.flywheel.lib.transform.TransformStack;
-import net.createmod.catnip.math.VecHelper;
-import net.createmod.catnip.math.AngleHelper;
+import com.bikerboys.schematicannon.foundation.utility.VecHelper;
+import com.bikerboys.schematicannon.foundation.utility.AngleHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
@@ -115,9 +114,8 @@ public abstract class ValueBoxTransform {
 		public void rotate(LevelAccessor level, BlockPos pos, BlockState state, PoseStack ms) {
 			float yRot = AngleHelper.horizontalAngle(getSide()) + 180;
 			float xRot = getSide() == Direction.UP ? 90 : getSide() == Direction.DOWN ? 270 : 0;
-			TransformStack.of(ms)
-				.rotateYDegrees(yRot)
-				.rotateXDegrees(xRot);
+			ms.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yRot));
+			ms.mulPose(com.mojang.math.Axis.XP.rotationDegrees(xRot));
 		}
 
 		@Override

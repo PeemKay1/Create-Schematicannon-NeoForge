@@ -1,18 +1,10 @@
 package com.bikerboys.schematicannon.content.equipment.clipboard;
 
 import com.bikerboys.schematicannon.Schematicannon;
-import com.tterrag.registrate.providers.DataGenContext;
-import com.tterrag.registrate.providers.RegistrateItemModelProvider;
-
-import net.minecraft.client.renderer.item.ItemProperties;
+import com.bikerboys.schematicannon.AllDataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.generators.ItemModelBuilder;
-import net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile;
 
 public class ClipboardOverrides {
 
@@ -20,7 +12,7 @@ public class ClipboardOverrides {
 		EMPTY("empty_clipboard"), WRITTEN("clipboard"), EDITING("clipboard_and_quill");
 
 		public String file;
-		public static ResourceLocation ID = Schematicannon.asResource("clipboard_type");
+		public static Identifier ID = Schematicannon.asResource("clipboard_type");
 
 		ClipboardType(String file) {
 			this.file = file;
@@ -28,30 +20,14 @@ public class ClipboardOverrides {
 	}
 
 	public static void switchTo(ClipboardType type, ItemStack clipboardItem) {
-		CompoundTag tag = clipboardItem.getOrCreateTag();
+		CompoundTag tag = clipboardItem.getOrDefault(AllDataComponents.CLIPBOARD_DATA, new CompoundTag()).copy();
 		tag.putInt("Type", type.ordinal());
+		clipboardItem.set(AllDataComponents.CLIPBOARD_DATA, tag);
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	public static void registerModelOverridesClient(ClipboardBlockItem item) {
-		ItemProperties.register(item, ClipboardType.ID, (pStack, pLevel, pEntity, pSeed) -> {
-			CompoundTag tag = pStack.getTag();
-			return tag == null ? 0 : tag.getInt("Type");
-		});
-	}
-
-	public static ItemModelBuilder addOverrideModels(DataGenContext<Item, ClipboardBlockItem> c,
-		RegistrateItemModelProvider p) {
-		ItemModelBuilder builder = p.generated(() -> c.get());
-		for (int i = 0; i < ClipboardType.values().length; i++) {
-			builder.override()
-				.predicate(ClipboardType.ID, i)
-				.model(p.getBuilder(c.getName() + "_" + i)
-					.parent(new UncheckedModelFile("item/generated"))
-					.texture("layer0", Schematicannon.asResource("item/" + ClipboardType.values()[i].file)))
-				.end();
-		}
-		return builder;
+		// Item model properties were replaced by the 26.2 item-model system.
+		// The default clipboard model remains usable until the dedicated model port lands.
 	}
 
 }

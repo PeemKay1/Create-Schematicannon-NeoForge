@@ -11,11 +11,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "create:schematic_table"
+          "name": "schematicannon:schematic_table"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "create:blocks/schematic_table"
+  "random_sequence": "schematicannon:blocks/schematic_table"
 }

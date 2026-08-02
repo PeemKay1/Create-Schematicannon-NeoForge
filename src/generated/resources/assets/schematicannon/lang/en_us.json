@@ -1,4 +1,5 @@
 {
+  "itemGroup.schematicannon": "Schematicannon",
 
   "block.schematicannon.clipboard": "Clipboard",
   "block.schematicannon.clipboard.tooltip.behaviour1": "Opens the _Interface_. _Sneak-Click_ to _place_ it on a surface.",
@@ -14,6 +15,9 @@
   "block.schematicannon.schematicannon.tooltip.behaviour1": "Opens the _Interface_",
   "block.schematicannon.schematicannon.tooltip.condition1": "When R-Clicked",
   "block.schematicannon.schematicannon.tooltip.summary": "Shoots blocks to recreate a deployed _Schematic_ in the World. Uses items from adjacent Inventories and _Gunpowder_ as fuel.",
+  "item.schematicannon.clipboard": "Clipboard",
+  "item.schematicannon.schematic_table": "Schematic Table",
+  "item.schematicannon.schematicannon": "Schematicannon",
   "schematicannon.gui.schematicTable.availableSchematics": "Available Schematics",
   "schematicannon.gui.schematicTable.finished": "Upload Finished!",
   "schematicannon.gui.schematicTable.noSchematics": "No Schematics Saved",
@@ -131,6 +135,7 @@
   "schematicannon.schematics.synchronizing": "Syncing...",
   "schematicannon.schematics.uploadTooLarge": "Your schematic exceeds limitations specified by the server.",
   "schematicannon.schematics.wrongFormat": "The schematic you are trying to upload is either corrupt or encoded wrongly! It should be encoded with GZIP compatible format.",
+  "schematicannon.schematics.importFailed": "The schematic could not be imported. Check its format version and required mods.",
   "schematicannon.gui.toolmenu.cycle": "[SCROLL] to Cycle",
   "schematicannon.gui.toolmenu.focusKey": "Hold [%1$s] to Focus",
   "item.schematicannon.empty_schematic": "Empty Schematic",

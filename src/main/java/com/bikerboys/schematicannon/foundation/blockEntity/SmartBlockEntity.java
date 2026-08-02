@@ -14,16 +14,17 @@ import com.bikerboys.schematicannon.foundation.blockEntity.behaviour.BlockEntity
 import com.bikerboys.schematicannon.foundation.utility.IInteractionChecker;
 
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
-import net.createmod.ponder.api.VirtualBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public abstract class SmartBlockEntity extends CachedRenderBBBlockEntity
-	implements PartialSafeNBT, IInteractionChecker, SpecialBlockEntityItemRequirement, VirtualBlockEntity {
+	implements PartialSafeNBT, IInteractionChecker, SpecialBlockEntityItemRequirement {
 
 	private final Map<BehaviourType<?>, BlockEntityBehaviour> behaviours = new Reference2ObjectArrayMap<>();
 	private boolean initialized = false;
@@ -82,13 +83,11 @@ public abstract class SmartBlockEntity extends CachedRenderBBBlockEntity
 	 * Hook only these in future subclasses of STE
 	 */
 	protected void write(CompoundTag tag, boolean clientPacket) {
-		super.saveAdditional(tag);
 		forEachBehaviour(tb -> tb.write(tag, clientPacket));
 	}
 
 	@Override
 	public void writeSafe(CompoundTag tag) {
-		super.saveAdditional(tag);
 		forEachBehaviour(tb -> {
 			if (tb.isSafeNBT())
 				tb.writeSafe(tag);
@@ -105,13 +104,15 @@ public abstract class SmartBlockEntity extends CachedRenderBBBlockEntity
 			addBehavioursDeferred(list);
 			list.forEach(b -> behaviours.put(b.getType(), b));
 		}
-		super.load(tag);
 		forEachBehaviour(tb -> tb.read(tag, clientPacket));
 	}
 
 	@Override
-	public final void load(CompoundTag tag) {
-		read(tag, false);
+	protected final void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		CompoundTag data = input.read("SchematicannonData", CompoundTag.CODEC).orElseGet(CompoundTag::new);
+		read(data, false);
+		readValue(input);
 	}
 
 	@Override
@@ -148,9 +149,19 @@ public abstract class SmartBlockEntity extends CachedRenderBBBlockEntity
 	}
 
 	@Override
-	public final void saveAdditional(CompoundTag tag) {
-		write(tag, false);
+	protected final void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		CompoundTag data = new CompoundTag();
+		write(data, false);
+		output.store("SchematicannonData", CompoundTag.CODEC, data);
+		writeValue(output);
 	}
+
+	/** Native 26.2 serialization hook for registries, item stacks and other typed values. */
+	protected void readValue(ValueInput input) {}
+
+	/** Native 26.2 serialization hook for registries, item stacks and other typed values. */
+	protected void writeValue(ValueOutput output) {}
 
 	@Override
 	public final void readClient(CompoundTag tag) {
@@ -221,7 +232,7 @@ public abstract class SmartBlockEntity extends CachedRenderBBBlockEntity
 
 	public void sendToMenu(FriendlyByteBuf buffer) {
 		buffer.writeBlockPos(getBlockPos());
-		buffer.writeNbt(getUpdateTag());
+		buffer.writeNbt(writeClient(new CompoundTag()));
 	}
 
 

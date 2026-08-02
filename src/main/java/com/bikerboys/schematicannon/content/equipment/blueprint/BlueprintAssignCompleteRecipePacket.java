@@ -1,31 +1,31 @@
 package com.bikerboys.schematicannon.content.equipment.blueprint;
 
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public class BlueprintAssignCompleteRecipePacket extends SimplePacketBase {
 
-	private final ResourceLocation recipeID;
+	private final Identifier recipeID;
 
-	public BlueprintAssignCompleteRecipePacket(ResourceLocation recipeID) {
+	public BlueprintAssignCompleteRecipePacket(Identifier recipeID) {
 		this.recipeID = recipeID;
 	}
 
 	public BlueprintAssignCompleteRecipePacket(FriendlyByteBuf buffer) {
-		recipeID = buffer.readResourceLocation();
+		recipeID = buffer.readIdentifier();
 	}
 
 	@Override
 	public void write(FriendlyByteBuf buffer) {
-		buffer.writeResourceLocation(recipeID);
+		buffer.writeIdentifier(recipeID);
 	}
 
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		return false;
 	}
 

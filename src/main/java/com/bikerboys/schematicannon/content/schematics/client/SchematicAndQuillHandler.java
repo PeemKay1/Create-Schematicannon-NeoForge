@@ -17,10 +17,9 @@ import com.bikerboys.schematicannon.foundation.utility.CreatePaths;
 import com.bikerboys.schematicannon.foundation.utility.RaycastHelper;
 import com.bikerboys.schematicannon.foundation.utility.RaycastHelper.PredicateTraceResult;
 
-import net.createmod.catnip.animation.AnimationTickHolder;
-import net.createmod.catnip.gui.ScreenOpener;
-import net.createmod.catnip.math.VecHelper;
-import net.createmod.catnip.outliner.Outliner;
+import com.bikerboys.schematicannon.foundation.utility.AnimationTickHolder;
+import com.bikerboys.schematicannon.foundation.render.Outliner;
+import com.bikerboys.schematicannon.foundation.utility.VecHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -57,10 +56,10 @@ public class SchematicAndQuillHandler {
 		if (selectedFace == null)
 			return true;
 
-		AABB bb = new AABB(firstPos, secondPos);
-		Vec3i vec = selectedFace.getNormal();
-		Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera()
-			.getPosition();
+		AABB bb = blockBox(firstPos, secondPos);
+		Vec3i vec = selectedFace.getUnitVec3i();
+		Vec3 projectedView = Minecraft.getInstance().gameRenderer.mainCamera()
+			.position();
 		if (bb.contains(projectedView))
 			delta *= -1;
 
@@ -104,7 +103,7 @@ public class SchematicAndQuillHandler {
 		}
 
 		if (secondPos != null) {
-			ScreenOpener.open(new SchematicPromptScreen());
+			Minecraft.getInstance().setScreenAndShow(new SchematicPromptScreen());
 			return true;
 		}
 
@@ -165,10 +164,10 @@ public class SchematicAndQuillHandler {
 
 		selectedFace = null;
 		if (secondPos != null) {
-			AABB bb = new AABB(firstPos, secondPos).expandTowards(1, 1, 1)
+			AABB bb = blockBox(firstPos, secondPos).expandTowards(1, 1, 1)
 				.inflate(.45f);
-			Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera()
-				.getPosition();
+			Vec3 projectedView = Minecraft.getInstance().gameRenderer.mainCamera()
+				.position();
 			boolean inside = bb.contains(projectedView);
 			PredicateTraceResult result =
 				RaycastHelper.rayTraceUntil(player, 70, pos -> inside ^ bb.contains(VecHelper.getCenterOf(pos)));
@@ -190,18 +189,21 @@ public class SchematicAndQuillHandler {
 		if (secondPos == null) {
 			if (firstPos == null)
 				return selectedPos == null ? null : new AABB(selectedPos);
-			return selectedPos == null ? new AABB(firstPos) : new AABB(firstPos, selectedPos).expandTowards(1, 1, 1);
+			return selectedPos == null ? new AABB(firstPos) : blockBox(firstPos, selectedPos).expandTowards(1, 1, 1);
 		}
-		return new AABB(firstPos, secondPos).expandTowards(1, 1, 1);
+		return blockBox(firstPos, secondPos).expandTowards(1, 1, 1);
+	}
+
+	private static AABB blockBox(BlockPos first, BlockPos second) {
+		return new AABB(Vec3.atLowerCornerOf(first), Vec3.atLowerCornerOf(second));
 	}
 
 	private boolean isActive() {
-		return isPresent() && AllItems.SCHEMATIC_AND_QUILL.isIn(Minecraft.getInstance().player.getMainHandItem());
+		return isPresent() && Minecraft.getInstance().player.getMainHandItem().is(AllItems.SCHEMATIC_AND_QUILL.get());
 	}
 
 	private boolean isPresent() {
-		return Minecraft.getInstance() != null && Minecraft.getInstance().level != null
-			&& Minecraft.getInstance().screen == null;
+		return Minecraft.getInstance() != null && Minecraft.getInstance().level != null;
 	}
 
 	public void saveSchematic(String string, boolean convertImmediately) {

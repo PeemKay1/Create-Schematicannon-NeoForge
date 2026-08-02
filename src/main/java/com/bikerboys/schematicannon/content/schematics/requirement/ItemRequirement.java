@@ -14,8 +14,9 @@ import com.bikerboys.schematicannon.api.schematic.requirement.SpecialBlockItemRe
 import com.bikerboys.schematicannon.api.schematic.requirement.SpecialEntityItemRequirement;
 import com.bikerboys.schematicannon.foundation.mixin.accessor.ItemFrameAccessor;
 
-import net.createmod.catnip.nbt.NBTProcessors;
+import com.bikerboys.schematicannon.foundation.NBTProcessors;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.Item;
@@ -25,7 +26,7 @@ import net.minecraft.world.level.block.AbstractBannerBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DirtPathBlock;
-import net.minecraft.world.level.block.FarmBlock;
+import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.SeaPickleBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.TurtleEggBlock;
@@ -111,13 +112,13 @@ public class ItemRequirement {
 			return new ItemRequirement(ItemUseType.CONSUME, new ItemStack(item, state.getValue(SnowLayerBlock.LAYERS)
 				.intValue()));
 		// FD's rich soil extends FarmBlock so this is to make sure the cost is correct (it should be rich soil not dirt)
-		if (block instanceof FarmBlock || block instanceof DirtPathBlock)
+		if (block instanceof FarmlandBlock || block instanceof DirtPathBlock)
 			return new ItemRequirement(ItemUseType.CONSUME, Items.DIRT);
 		if (block instanceof AbstractBannerBlock && be instanceof BannerBlockEntity bannerBE)
 			return new ItemRequirement(new StrictNbtStackRequirement(bannerBE.getItem(), ItemUseType.CONSUME));
 		// Tall grass doesnt exist as a block so use 2 grass blades
 		if (block == Blocks.TALL_GRASS)
-			return new ItemRequirement(ItemUseType.CONSUME, new ItemStack(Items.GRASS, 2));
+			return new ItemRequirement(ItemUseType.CONSUME, new ItemStack(Items.SHORT_GRASS, 2));
 		// Large ferns don't exist as blocks so use 2 ferns instead
 		if (block == Blocks.LARGE_FERN)
 			return new ItemRequirement(ItemUseType.CONSUME, new ItemStack(Items.FERN, 2));
@@ -145,9 +146,12 @@ public class ItemRequirement {
 		if (entity instanceof ArmorStand armorStand) {
 			List<StackRequirement> requirements = new ArrayList<>();
 			requirements.add(new StackRequirement(new ItemStack(Items.ARMOR_STAND), ItemUseType.CONSUME));
-			armorStand.getAllSlots()
-				.forEach(s -> requirements
-					.add(new StrictNbtStackRequirement(NBTProcessors.withUnsafeNBTDiscarded(s), ItemUseType.CONSUME)));
+			for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+				ItemStack equipped = armorStand.getItemBySlot(slot);
+				if (!equipped.isEmpty())
+					requirements.add(new StrictNbtStackRequirement(
+						NBTProcessors.withUnsafeNBTDiscarded(equipped), ItemUseType.CONSUME));
+			}
 			return new ItemRequirement(requirements);
 		}
 
@@ -203,7 +207,7 @@ public class ItemRequirement {
 
 		@Override
 		public boolean matches(ItemStack other) {
-			return ItemStack.isSameItemSameTags(stack, other);
+			return ItemStack.isSameItemSameComponents(stack, other);
 		}
 	}
 }

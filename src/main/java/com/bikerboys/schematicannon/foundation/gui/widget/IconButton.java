@@ -1,11 +1,9 @@
 package com.bikerboys.schematicannon.foundation.gui.widget;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.bikerboys.schematicannon.foundation.gui.AllGuiTextures;
 
-import net.createmod.catnip.gui.element.ScreenElement;
-import net.createmod.catnip.gui.widget.AbstractSimiWidget;
-import net.minecraft.client.gui.GuiGraphics;
+import com.bikerboys.schematicannon.foundation.gui.ScreenElement;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 public class IconButton extends AbstractSimiWidget {
@@ -24,7 +22,7 @@ public class IconButton extends AbstractSimiWidget {
 	}
 
 	@Override
-	public void doRender(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+	public void doRender(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
 		if (visible) {
 			isHovered = mouseX >= getX() && mouseY >= getY() && mouseX < getX() + width && mouseY < getY() + height;
 
@@ -33,15 +31,13 @@ public class IconButton extends AbstractSimiWidget {
 					: isHovered ? AllGuiTextures.BUTTON_HOVER
 						: green ? AllGuiTextures.BUTTON_GREEN : AllGuiTextures.BUTTON;
 
-			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 			drawBg(graphics, button);
 			icon.render(graphics, getX() + 1, getY() + 1);
 		}
 	}
 
-	protected void drawBg(GuiGraphics graphics, AllGuiTextures button) {
-		graphics.blit(button.location, getX(), getY(), button.getStartX(), button.getStartY(), button.getWidth(),
-			button.getHeight());
+	protected void drawBg(GuiGraphicsExtractor graphics, AllGuiTextures button) {
+		button.render(graphics, getX(), getY());
 	}
 
 	public void setToolTip(Component text) {

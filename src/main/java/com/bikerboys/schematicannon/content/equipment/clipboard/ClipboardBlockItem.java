@@ -2,13 +2,13 @@ package com.bikerboys.schematicannon.content.equipment.clipboard;
 
 import javax.annotation.Nonnull;
 
-import net.createmod.catnip.gui.ScreenOpener;
+import com.bikerboys.schematicannon.AllDataComponents;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -17,10 +17,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.items.ItemHandlerHelper;
 
 public class ClipboardBlockItem extends BlockItem  {
 
@@ -36,7 +32,7 @@ public class ClipboardBlockItem extends BlockItem  {
 			return InteractionResult.PASS;
 		if (player.isShiftKeyDown())
 			return super.useOn(context);
-		return use(context.getLevel(), player, context.getHand()).getResult();
+		return use(context.getLevel(), player, context.getHand());
 	}
 
 	@Override
@@ -46,36 +42,38 @@ public class ClipboardBlockItem extends BlockItem  {
 			return false;
 		if (!(pLevel.getBlockEntity(pPos) instanceof ClipboardBlockEntity cbe))
 			return false;
-		cbe.dataContainer = ItemHandlerHelper.copyStackWithSize(pStack, 1);
+		cbe.dataContainer = pStack.copyWithCount(1);
 		cbe.notifyUpdate();
 		return true;
 	}
 
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+	public InteractionResult use(Level world, Player player, InteractionHand hand) {
 		ItemStack heldItem = player.getItemInHand(hand);
 		if (hand == InteractionHand.OFF_HAND)
-			return InteractionResultHolder.pass(heldItem);
+			return InteractionResult.PASS;
 
 		player.getCooldowns()
-			.addCooldown(heldItem.getItem(), 10);
-		if (world.isClientSide)
-			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> openScreen(player, heldItem));
-		CompoundTag tag = heldItem.getOrCreateTag();
-		tag.putInt("Type", ClipboardOverrides.ClipboardType.EDITING.ordinal());
-		heldItem.setTag(tag);
+			.addCooldown(heldItem, 10);
+		if (world.isClientSide())
+			openScreen(player, heldItem);
+		CompoundTag tag = heldItem.getOrDefault(AllDataComponents.CLIPBOARD_DATA, new CompoundTag()).copy();
+		// A material checklist is read-only and must stay a written clipboard.
+		// Changing its type to EDITING here broke its model/state after it was opened.
+		if (!tag.getBooleanOr("Readonly", false))
+			tag.putInt("Type", ClipboardOverrides.ClipboardType.EDITING.ordinal());
+		heldItem.set(AllDataComponents.CLIPBOARD_DATA, tag);
 
-		return InteractionResultHolder.success(heldItem);
+		return InteractionResult.SUCCESS;
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	private void openScreen(Player player, ItemStack stack) {
 		if (Minecraft.getInstance().player == player)
-			ScreenOpener.open(new ClipboardScreen(player.getInventory().selected, stack, null));
+			Minecraft.getInstance().setScreenAndShow(new ClipboardScreen(player.getInventory().getSelectedSlot(), stack, null));
 	}
 
 	public void registerModelOverrides() {
-		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClipboardOverrides.registerModelOverridesClient(this));
+		// Registered by the client bootstrap once the 26.2 item-model port is enabled.
 	}
 
 }

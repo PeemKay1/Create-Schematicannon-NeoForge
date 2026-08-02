@@ -4,19 +4,19 @@
     {
       "model": "schematicannon:item/clipboard_0",
       "predicate": {
-        "create:clipboard_type": 0.0
+        "schematicannon:clipboard_type": 0.0
       }
     },
     {
       "model": "schematicannon:item/clipboard_1",
       "predicate": {
-        "create:clipboard_type": 1.0
+        "schematicannon:clipboard_type": 1.0
       }
     },
     {
       "model": "schematicannon:item/clipboard_2",
       "predicate": {
-        "create:clipboard_type": 2.0
+        "schematicannon:clipboard_type": 2.0
       }
     }
   ],

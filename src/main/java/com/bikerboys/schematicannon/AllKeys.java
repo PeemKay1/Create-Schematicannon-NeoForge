@@ -8,24 +8,24 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.settings.KeyModifier;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
-@EventBusSubscriber(value = Dist.CLIENT, bus = Bus.MOD)
+@EventBusSubscriber(modid = Schematicannon.ID, value = Dist.CLIENT)
 public enum AllKeys {
-
 	TOOL_MENU("toolmenu", GLFW.GLFW_KEY_LEFT_ALT, "Focus Schematic Overlay"),
 	ACTIVATE_TOOL(GLFW.GLFW_KEY_LEFT_CONTROL),
 	TOOLBELT("toolbelt", GLFW.GLFW_KEY_LEFT_ALT, "Access Nearby Toolboxes"),
 	ROTATE_MENU("rotate_menu", GLFW.GLFW_KEY_UNKNOWN, "Open Block Rotation Menu"),
 
 	;
+
+	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
+		Identifier.fromNamespaceAndPath(Schematicannon.ID, "main"));
 
 	private KeyMapping keybind;
 	private final String description;
@@ -53,7 +53,7 @@ public enum AllKeys {
 	@SubscribeEvent
 	public static void register(RegisterKeyMappingsEvent event) {
 		for (AllKeys key : values()) {
-			key.keybind = new KeyMapping(key.description, key.key, Schematicannon.NAME);
+			key.keybind = new KeyMapping(key.description, key.key, CATEGORY);
 			if (!key.modifiable)
 				continue;
 
@@ -78,41 +78,27 @@ public enum AllKeys {
 	}
 
 	public boolean doesModifierAndCodeMatch(int code) {
-		boolean codeMatches = code == keybind.getKey().getValue();
-
-		boolean modifierMatches;
-		KeyModifier modifier = keybind.getKeyModifier();
-		if (modifier == KeyModifier.NONE) {
-			modifierMatches = true;
-		} else {
-			modifierMatches = modifier.equals(KeyModifier.getActiveModifier());
-		}
-
-		return codeMatches && modifierMatches;
+		return code == keybind.getKey().getValue();
 	}
 
 	public static boolean isKeyDown(int key) {
-		return InputConstants.isKeyDown(Minecraft.getInstance()
-			.getWindow()
-			.getWindow(), key);
+		return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), key);
 	}
 
 	public static boolean isMouseButtonDown(int button) {
-		return GLFW.glfwGetMouseButton(Minecraft.getInstance()
-			.getWindow()
-			.getWindow(), button) == 1;
+		return GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().handle(), button) == 1;
 	}
 
 	public static boolean ctrlDown() {
-		return Screen.hasControlDown();
+		return isKeyDown(InputConstants.KEY_LCONTROL) || isKeyDown(InputConstants.KEY_RCONTROL);
 	}
 
 	public static boolean shiftDown() {
-		return Screen.hasShiftDown();
+		return isKeyDown(InputConstants.KEY_LSHIFT) || isKeyDown(InputConstants.KEY_RSHIFT);
 	}
 
 	public static boolean altDown() {
-		return Screen.hasAltDown();
+		return isKeyDown(InputConstants.KEY_LALT) || isKeyDown(InputConstants.KEY_RALT);
 	}
 
 }

@@ -17,10 +17,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.util.NonNullPredicate;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.common.util.NonNullPredicate;
+import net.neoforged.fml.DistExecutor;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 
 public class CreateBlockEntityBuilder<T extends BlockEntity, P> extends BlockEntityBuilder<T, P> {
 

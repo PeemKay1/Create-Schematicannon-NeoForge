@@ -7,7 +7,7 @@ import java.util.List;
 import com.bikerboys.schematicannon.foundation.gui.AllIcons;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 
-import net.createmod.catnip.lang.Lang;
+import com.bikerboys.schematicannon.foundation.utility.LangUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -33,7 +33,7 @@ public enum ToolType {
 	}
 
 	public MutableComponent getDisplayName() {
-		return CreateLang.translateDirect("schematic.tool." + Lang.asId(name()));
+		return CreateLang.translateDirect("schematic.tool." + LangUtil.asId(name()));
 	}
 
 	public AllIcons getIcon() {
@@ -49,7 +49,7 @@ public enum ToolType {
 	}
 
 	public List<Component> getDescription() {
-		return CreateLang.translatedOptions("schematic.tool." + Lang.asId(name()) + ".description", "0", "1", "2", "3");
+		return CreateLang.translatedOptions("schematic.tool." + LangUtil.asId(name()) + ".description", "0", "1", "2", "3");
 	}
 
 }

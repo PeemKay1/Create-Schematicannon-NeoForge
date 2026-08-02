@@ -1,7 +1,5 @@
 package com.bikerboys.schematicannon.foundation.utility;
 
-import net.createmod.catnip.animation.LerpedFloat;
-import net.createmod.catnip.math.AngleHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 

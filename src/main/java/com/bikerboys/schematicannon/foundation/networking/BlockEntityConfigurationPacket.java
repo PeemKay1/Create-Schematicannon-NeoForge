@@ -9,7 +9,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public abstract class BlockEntityConfigurationPacket<BE extends SyncedBlockEntity> extends SimplePacketBase {
 
@@ -32,7 +31,7 @@ public abstract class BlockEntityConfigurationPacket<BE extends SyncedBlockEntit
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null || player.isSpectator() || AdventureUtil.isAdventure(player))

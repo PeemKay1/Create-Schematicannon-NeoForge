@@ -9,8 +9,8 @@ import com.bikerboys.schematicannon.api.MovedBlockTransformerRegistries.BlockEnt
 import com.bikerboys.schematicannon.api.MovedBlockTransformerRegistries.BlockTransformer;
 import com.bikerboys.schematicannon.api.TransformableBlock;
 import com.bikerboys.schematicannon.api.TransformableBlockEntity;
+import com.bikerboys.schematicannon.foundation.utility.VecHelper;
 
-import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.AxisDirection;
@@ -27,7 +27,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BellAttachType;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
@@ -173,7 +172,7 @@ public class StructureTransform {
 		}
 
 		if (block instanceof FaceAttachedHorizontalDirectionalBlock) {
-			DirectionProperty facingProperty = FaceAttachedHorizontalDirectionalBlock.FACING;
+			EnumProperty<Direction> facingProperty = FaceAttachedHorizontalDirectionalBlock.FACING;
 			EnumProperty<AttachFace> faceProperty = FaceAttachedHorizontalDirectionalBlock.FACE;
 			Direction stateFacing = state.getValue(facingProperty);
 			AttachFace stateFace = state.getValue(faceProperty);

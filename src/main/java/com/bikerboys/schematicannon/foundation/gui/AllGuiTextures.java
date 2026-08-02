@@ -2,16 +2,11 @@ package com.bikerboys.schematicannon.foundation.gui;
 
 import com.bikerboys.schematicannon.Schematicannon;
 
-import net.createmod.catnip.gui.TextureSheetSegment;
-import net.createmod.catnip.gui.UIRenderHelper;
-import net.createmod.catnip.gui.element.ScreenElement;
-import net.createmod.catnip.theme.Color;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 
-public enum AllGuiTextures implements ScreenElement, TextureSheetSegment {
+public enum AllGuiTextures {
 
 	// Inventories
 	PLAYER_INVENTORY("player_inventory", 176, 108),
@@ -54,7 +49,7 @@ public enum AllGuiTextures implements ScreenElement, TextureSheetSegment {
 	INDICATOR_YELLOW("widgets", 54, 18, 18, 6),
 	INDICATOR_RED("widgets", 72, 18, 18, 6);
 
-	public final ResourceLocation location;
+	public final Identifier location;
 	private final int width;
 	private final int height;
 	private final int startX;
@@ -69,45 +64,33 @@ public enum AllGuiTextures implements ScreenElement, TextureSheetSegment {
 	}
 
 	AllGuiTextures(String namespace, String location, int startX, int startY, int width, int height) {
-		this.location = new ResourceLocation(namespace, "textures/gui/" + location + ".png");
+		this.location = Identifier.fromNamespaceAndPath(namespace, "textures/gui/" + location + ".png");
 		this.width = width;
 		this.height = height;
 		this.startX = startX;
 		this.startY = startY;
 	}
 
-	@Override
-	public ResourceLocation getLocation() {
+	public Identifier getLocation() {
 		return location;
 	}
 
-	@OnlyIn(Dist.CLIENT)
-	public void render(GuiGraphics graphics, int x, int y) {
-		graphics.blit(location, x, y, startX, startY, width, height);
+	public void render(GuiGraphicsExtractor graphics, int x, int y) {
+		graphics.blit(RenderPipelines.GUI_TEXTURED, location, x, y, startX, startY, width, height, 256, 256);
 	}
 
-	@OnlyIn(Dist.CLIENT)
-	public void render(GuiGraphics graphics, int x, int y, Color c) {
-		bind();
-		UIRenderHelper.drawColoredTexture(graphics, c, x, y, startX, startY, width, height);
-	}
-
-	@Override
 	public int getStartX() {
 		return startX;
 	}
 
-	@Override
 	public int getStartY() {
 		return startY;
 	}
 
-	@Override
 	public int getWidth() {
 		return width;
 	}
 
-	@Override
 	public int getHeight() {
 		return height;
 	}

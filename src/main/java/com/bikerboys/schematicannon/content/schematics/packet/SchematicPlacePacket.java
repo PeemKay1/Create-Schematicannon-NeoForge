@@ -2,15 +2,16 @@ package com.bikerboys.schematicannon.content.schematics.packet;
 
 import com.bikerboys.schematicannon.content.schematics.SchematicPrinter;
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 import com.bikerboys.schematicannon.foundation.utility.BlockHelper;
 
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public class SchematicPlacePacket extends SimplePacketBase {
 
@@ -21,16 +22,16 @@ public class SchematicPlacePacket extends SimplePacketBase {
 	}
 
 	public SchematicPlacePacket(FriendlyByteBuf buffer) {
-		stack = buffer.readItem();
+		stack = ItemStack.STREAM_CODEC.decode((RegistryFriendlyByteBuf) buffer);
 	}
 
 	@Override
 	public void write(FriendlyByteBuf buffer) {
-		buffer.writeItem(stack);
+		ItemStack.STREAM_CODEC.encode((RegistryFriendlyByteBuf) buffer, stack);
 	}
 
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null)

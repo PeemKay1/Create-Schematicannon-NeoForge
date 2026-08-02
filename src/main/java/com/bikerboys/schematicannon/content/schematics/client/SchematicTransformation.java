@@ -4,11 +4,10 @@ import static java.lang.Math.abs;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import dev.engine_room.flywheel.lib.transform.TransformStack;
-import net.createmod.catnip.animation.AnimationTickHolder;
-import net.createmod.catnip.math.VecHelper;
-import net.createmod.catnip.animation.LerpedFloat;
-import net.createmod.catnip.animation.LerpedFloat.Chaser;
+import com.bikerboys.schematicannon.foundation.utility.AnimationTickHolder;
+import com.bikerboys.schematicannon.foundation.utility.LerpedFloat;
+import com.bikerboys.schematicannon.foundation.utility.LerpedFloat.Chaser;
+import com.bikerboys.schematicannon.foundation.utility.VecHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.level.block.Mirror;
@@ -62,9 +61,8 @@ public class SchematicTransformation {
 		float pt = AnimationTickHolder.getPartialTicks();
 
 		// Translation
-		TransformStack.of(ms)
-			.translate(VecHelper.lerp(pt, prevChasingPos, chasingPos)
-				.subtract(camera));
+		ms.translate(VecHelper.lerp(pt, prevChasingPos, chasingPos)
+			.subtract(camera));
 		Vec3 rotationOffset = getRotationOffset(true);
 
 		// Rotation & Mirror
@@ -72,10 +70,9 @@ public class SchematicTransformation {
 		float lr = getScaleLR().getValue(pt);
 		float rot = rotation.getValue(pt) + ((fb < 0 && lr < 0) ? 180 : 0);
 		ms.translate(xOrigin, 0, zOrigin);
-		TransformStack.of(ms)
-			.translate(rotationOffset)
-			.rotateYDegrees(rot)
-			.translateBack(rotationOffset);
+		ms.translate(rotationOffset);
+		ms.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rot));
+		ms.translate(rotationOffset.scale(-1));
 		ms.scale(abs(fb), 1, abs(lr));
 		ms.translate(-xOrigin, 0, -zOrigin);
 

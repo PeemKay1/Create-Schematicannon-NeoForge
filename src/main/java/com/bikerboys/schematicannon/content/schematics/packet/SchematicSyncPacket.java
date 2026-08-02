@@ -1,19 +1,19 @@
 package com.bikerboys.schematicannon.content.schematics.packet;
 
 import com.bikerboys.schematicannon.AllItems;
+import com.bikerboys.schematicannon.AllDataComponents;
 import com.bikerboys.schematicannon.content.schematics.SchematicInstances;
+import com.bikerboys.schematicannon.content.schematics.SchematicItem;
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public class SchematicSyncPacket extends SimplePacketBase {
 
@@ -50,7 +50,7 @@ public class SchematicSyncPacket extends SimplePacketBase {
 	}
 
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null)
@@ -61,14 +61,15 @@ public class SchematicSyncPacket extends SimplePacketBase {
 			} else {
 				stack = player.getInventory().getItem(slot);
 			}
-			if (!AllItems.SCHEMATIC.isIn(stack)) {
+			if (!stack.is(AllItems.SCHEMATIC.get())) {
 				return;
 			}
-			CompoundTag tag = stack.getOrCreateTag();
-			tag.putBoolean("Deployed", deployed);
-			tag.put("Anchor", NbtUtils.writeBlockPos(anchor));
-			tag.putString("Rotation", rotation.name());
-			tag.putString("Mirror", mirror.name());
+			stack.set(AllDataComponents.SCHEMATIC_DEPLOYED, deployed);
+			stack.set(AllDataComponents.SCHEMATIC_ANCHOR, anchor);
+			stack.set(AllDataComponents.SCHEMATIC_ROTATION, rotation);
+			stack.set(AllDataComponents.SCHEMATIC_MIRROR, mirror);
+			stack.set(AllDataComponents.SCHEMATIC_PLACEMENT_VERSION,
+				SchematicItem.PLACEMENT_FORMAT_VERSION);
 			SchematicInstances.clearHash(stack);
 		});
 		return true;

@@ -12,8 +12,6 @@ import com.google.gson.internal.Streams;
 import com.google.gson.stream.JsonReader;
 import com.bikerboys.schematicannon.Schematicannon;
 
-import net.createmod.catnip.lang.Lang;
-
 public class FilesHelper {
 	public static void createFolderIfMissing(Path path) {
 		try {
@@ -37,7 +35,7 @@ public class FilesHelper {
 	}
 
 	public static String slug(String name) {
-		return Lang.asId(name)
+		return LangUtil.asId(name)
 			.replaceAll("\\W+", "_");
 	}
 

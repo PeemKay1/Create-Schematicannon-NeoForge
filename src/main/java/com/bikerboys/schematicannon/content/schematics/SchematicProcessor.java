@@ -1,37 +1,32 @@
 package com.bikerboys.schematicannon.content.schematics;
 
-import java.util.Optional;
-
 import javax.annotation.Nullable;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.bikerboys.schematicannon.AllStructureProcessorTypes;
+import com.bikerboys.schematicannon.foundation.NBTProcessors;
 
-import net.createmod.catnip.nbt.NBTProcessors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.util.ProblemReporter;
 
-public class SchematicProcessor extends StructureProcessor {
+public class SchematicProcessor implements StructureProcessor {
 
 	public static final SchematicProcessor INSTANCE = new SchematicProcessor();
-	public static final Codec<SchematicProcessor> CODEC = Codec.unit(() -> {
-		return INSTANCE;
-	});
+	public static final MapCodec<SchematicProcessor> CODEC = MapCodec.unit(INSTANCE);
 
 	@Nullable
 	@Override
-	public StructureTemplate.StructureBlockInfo process(LevelReader world, BlockPos pos, BlockPos anotherPos, StructureTemplate.StructureBlockInfo rawInfo,
-			StructureTemplate.StructureBlockInfo info, StructurePlaceSettings settings, @Nullable StructureTemplate template) {
+	public StructureTemplate.StructureBlockInfo processBlock(LevelReader world, BlockPos pos, BlockPos anotherPos,
+			BlockPos pivot, StructureTemplate.StructureBlockInfo info, StructurePlaceSettings settings) {
 		if (info.nbt() != null && info.state().hasBlockEntity()) {
 			BlockEntity be = ((EntityBlock) info.state().getBlock()).newBlockEntity(info.pos(), info.state());
 			if (be != null) {
@@ -47,20 +42,16 @@ public class SchematicProcessor extends StructureProcessor {
 	@Override
 	public StructureTemplate.StructureEntityInfo processEntity(LevelReader world, BlockPos pos, StructureTemplate.StructureEntityInfo rawInfo,
 			StructureTemplate.StructureEntityInfo info, StructurePlaceSettings settings, StructureTemplate template) {
-		return EntityType.by(info.nbt).flatMap(type -> {
-			if (world instanceof Level) {
-				Entity e = type.create((Level) world);
-				if (e != null && !e.onlyOpCanSetNbt()) {
-					return Optional.of(info);
-				}
-			}
-			return Optional.empty();
-		}).orElse(null);
+		return EntityType.by(TagValueInput.create(
+				ProblemReporter.DISCARDING, world.registryAccess(), info.nbt))
+			.filter(type -> !type.onlyOpCanSetNbt())
+			.map(type -> info)
+			.orElse(null);
 	}
 
 	@Override
-	protected StructureProcessorType<?> getType() {
-		return AllStructureProcessorTypes.SCHEMATIC.get();
+	public MapCodec<? extends StructureProcessor> codec() {
+		return CODEC;
 	}
 
 }

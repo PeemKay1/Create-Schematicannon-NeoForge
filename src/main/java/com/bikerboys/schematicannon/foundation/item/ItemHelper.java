@@ -11,7 +11,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 
 import com.bikerboys.schematicannon.foundation.block.IBE;
 
-import net.createmod.catnip.data.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.util.Mth;
@@ -23,11 +23,11 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class ItemHelper {
 
@@ -59,7 +59,7 @@ public class ItemHelper {
 
 	public static void addToList(ItemStack stack, List<ItemStack> stacks) {
 		for (ItemStack s : stacks) {
-			if (!ItemHandlerHelper.canItemStacksStack(stack, s))
+			if (!ItemStack.isSameItemSameComponents(stack, s))
 				continue;
 			int transferred = Math.min(s.getMaxStackSize() - s.getCount(), stack.getCount());
 			s.grow(transferred);
@@ -82,10 +82,8 @@ public class ItemHelper {
 	}
 
 	public static <T extends IBE<? extends BlockEntity>> int calcRedstoneFromBlockEntity(T ibe, Level level, BlockPos pos) {
-		return ibe.getBlockEntityOptional(level, pos)
-			.map(be -> be.getCapability(ForgeCapabilities.ITEM_HANDLER))
-			.map(lo -> lo.map(ItemHelper::calcRedstoneFromInventory).orElse(0))
-			.orElse(0);
+		var handler = level.getCapability(Capabilities.Item.BLOCK, pos, null);
+		return handler == null ? 0 : calcRedstoneFromInventory(IItemHandler.of(handler));
 	}
 
 	public static int calcRedstoneFromInventory(@Nullable IItemHandler inv) {
@@ -120,14 +118,13 @@ public class ItemHelper {
 		Ingredients:
 		for (Ingredient igd : recipeIngredients) {
 			for (Pair<Ingredient, MutableInt> pair : actualIngredients) {
-				ItemStack[] stacks1 = pair.getFirst()
-					.getItems();
-				ItemStack[] stacks2 = igd.getItems();
+				ItemStack[] stacks1 = ingredientStacks(pair.getLeft());
+				ItemStack[] stacks2 = ingredientStacks(igd);
 				if (stacks1.length != stacks2.length)
 					continue;
 				for (int i = 0; i <= stacks1.length; i++) {
 					if (i == stacks1.length) {
-						pair.getSecond()
+						pair.getRight()
 							.increment();
 						continue Ingredients;
 					}
@@ -143,8 +140,8 @@ public class ItemHelper {
 	public static boolean matchIngredients(Ingredient i1, Ingredient i2) {
 		if (i1 == i2)
 			return true;
-		ItemStack[] stacks1 = i1.getItems();
-		ItemStack[] stacks2 = i2.getItems();
+		ItemStack[] stacks1 = ingredientStacks(i1);
+		ItemStack[] stacks2 = ingredientStacks(i2);
 		if (stacks1 == stacks2)
 			return true;
 		if (stacks1.length == stacks2.length) {
@@ -227,7 +224,7 @@ public class ItemHelper {
 
 			if (!extracting.isEmpty() && !hasEnoughItems && potentialOtherMatch) {
 				ItemStack blackListed = extracting.copy();
-				test = test.and(i -> !ItemHandlerHelper.canItemStacksStack(i, blackListed));
+				test = test.and(i -> !ItemStack.isSameItemSameComponents(i, blackListed));
 				continue;
 			}
 
@@ -282,7 +279,7 @@ public class ItemHelper {
 	}
 
 	public static boolean canItemStackAmountsStack(ItemStack a, ItemStack b) {
-		return ItemHandlerHelper.canItemStacksStack(a, b) && a.getCount() + b.getCount() <= a.getMaxStackSize();
+		return ItemStack.isSameItemSameComponents(a, b) && a.getCount() + b.getCount() <= a.getMaxStackSize();
 	}
 
 	public static ItemStack findFirstMatch(IItemHandler inv, Predicate<ItemStack> test) {
@@ -313,7 +310,7 @@ public class ItemHelper {
 		int max = stack.getMaxStackSize();
 		if (count <= max)
 			return ItemStack.EMPTY;
-		ItemStack remainder = ItemHandlerHelper.copyStackWithSize(stack, count - max);
+		ItemStack remainder = stack.copyWithCount(count - max);
 		if (!simulate)
 			stack.setCount(max);
 		return remainder;
@@ -331,6 +328,10 @@ public class ItemHelper {
 		for (int i = 0; i < from.getSlots(); i++) {
 			to.setStackInSlot(i, from.getStackInSlot(i).copy());
 		}
+	}
+
+	private static ItemStack[] ingredientStacks(Ingredient ingredient) {
+		return ingredient.items().map(ItemStack::new).toArray(ItemStack[]::new);
 	}
 
 	public static List<ItemStack> getNonEmptyStacks(ItemStackHandler handler) {

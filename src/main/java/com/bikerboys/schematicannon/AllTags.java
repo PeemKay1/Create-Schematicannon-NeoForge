@@ -1,14 +1,12 @@
 package com.bikerboys.schematicannon;
 
-import static com.bikerboys.schematicannon.AllTags.NameSpace.FORGE;
 import static com.bikerboys.schematicannon.AllTags.NameSpace.MOD;
 
-import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.jetbrains.annotations.Nullable;
 
-import net.createmod.catnip.lang.Lang;
+import com.bikerboys.schematicannon.foundation.utility.LangUtil;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -16,41 +14,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.IForgeRegistry;
-
 public class AllTags {
-	@ScheduledForRemoval(inVersion = "1.21.1+ Port")
-	@Deprecated(since = "6.0.7", forRemoval = true)
-	public static <T> TagKey<T> optionalTag(IForgeRegistry<T> registry,
-											ResourceLocation id) {
-		return TagKey.create(registry.getRegistryKey(), id);
-	}
-
-	@ScheduledForRemoval(inVersion = "1.21.1+ Port")
-	@Deprecated(since = "6.0.7", forRemoval = true)
-	public static <T> TagKey<T> forgeTag(IForgeRegistry<T> registry, String path) {
-		return optionalTag(registry, FORGE.id(path));
-	}
-
-	@ScheduledForRemoval(inVersion = "1.21.1+ Port")
-	@Deprecated(since = "6.0.7", forRemoval = true)
-	public static TagKey<Block> forgeBlockTag(String path) {
-		return forgeTag(ForgeRegistries.BLOCKS, path);
-	}
-
-	@ScheduledForRemoval(inVersion = "1.21.1+ Port")
-	@Deprecated(since = "6.0.7", forRemoval = true)
-	public static TagKey<Item> forgeItemTag(String path) {
-		return forgeTag(ForgeRegistries.ITEMS, path);
-	}
-
-	@ScheduledForRemoval(inVersion = "1.21.1+ Port")
-	@Deprecated(since = "6.0.7", forRemoval = true)
-	public static TagKey<Fluid> forgeFluidTag(String path) {
-		return forgeTag(ForgeRegistries.FLUIDS, path);
-	}
-
 	public enum NameSpace {
 
 		MOD(Schematicannon.ID),
@@ -66,12 +30,12 @@ public class AllTags {
 			this.id = id;
 		}
 
-		public ResourceLocation id(String path) {
-			return new ResourceLocation(this.id, path);
+		public Identifier id(String path) {
+			return Identifier.fromNamespaceAndPath(this.id, path);
 		}
 
-		public ResourceLocation id(Enum<?> entry, @Nullable String pathOverride) {
-			return this.id(pathOverride != null ? pathOverride : Lang.asId(entry.name()));
+		public Identifier id(Enum<?> entry, @Nullable String pathOverride) {
+			return this.id(pathOverride != null ? pathOverride : LangUtil.asId(entry.name()));
 		}
 	}
 

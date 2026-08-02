@@ -16,18 +16,19 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
+import com.bikerboys.schematicannon.foundation.utility.FontHelper.Palette;
 
-import net.createmod.catnip.lang.FontHelper.Palette;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 public record ItemDescription(ImmutableList<Component> lines, ImmutableList<Component> linesOnShift,
 							  ImmutableList<Component> linesOnCtrl) {
@@ -50,13 +51,13 @@ public record ItemDescription(ImmutableList<Component> lines, ImmutableList<Comp
 	}
 
 	public static boolean canFillBuilder(String translationKey) {
-		return I18n.exists(translationKey);
+		return Language.getInstance().has(translationKey);
 	}
 
 	public static void fillBuilder(Builder builder, String translationKey) {
 		// Summary
 		String summaryKey = translationKey + ".summary";
-		if (I18n.exists(summaryKey)) {
+		if (Language.getInstance().has(summaryKey)) {
 			builder.addSummary(I18n.get(summaryKey));
 		}
 
@@ -64,7 +65,7 @@ public record ItemDescription(ImmutableList<Component> lines, ImmutableList<Comp
 		for (int i = 1; i < 100; i++) {
 			String conditionKey = translationKey + ".condition" + i;
 			String behaviourKey = translationKey + ".behaviour" + i;
-			if (!I18n.exists(conditionKey))
+			if (!Language.getInstance().has(conditionKey))
 				break;
 			builder.addBehaviour(I18n.get(conditionKey), I18n.get(behaviourKey));
 		}
@@ -73,7 +74,7 @@ public record ItemDescription(ImmutableList<Component> lines, ImmutableList<Comp
 		for (int i = 1; i < 100; i++) {
 			String controlKey = translationKey + ".control" + i;
 			String actionKey = translationKey + ".action" + i;
-			if (!I18n.exists(controlKey))
+			if (!Language.getInstance().has(controlKey))
 				break;
 			builder.addAction(I18n.get(controlKey), I18n.get(actionKey));
 		}
@@ -101,13 +102,25 @@ public record ItemDescription(ImmutableList<Component> lines, ImmutableList<Comp
 	}
 
 	public ImmutableList<Component> getCurrentLines() {
-		if (Screen.hasShiftDown()) {
+		if (isShiftDown()) {
 			return linesOnShift;
-		} else if (Screen.hasControlDown()) {
+		} else if (isControlDown()) {
 			return linesOnCtrl;
 		} else {
 			return lines;
 		}
+	}
+
+	private static boolean isShiftDown() {
+		var window = Minecraft.getInstance().getWindow();
+		return InputConstants.isKeyDown(window, InputConstants.KEY_LSHIFT)
+			|| InputConstants.isKeyDown(window, InputConstants.KEY_RSHIFT);
+	}
+
+	private static boolean isControlDown() {
+		var window = Minecraft.getInstance().getWindow();
+		return InputConstants.isKeyDown(window, InputConstants.KEY_LCONTROL)
+			|| InputConstants.isKeyDown(window, InputConstants.KEY_RCONTROL);
 	}
 
 	public static class Builder {

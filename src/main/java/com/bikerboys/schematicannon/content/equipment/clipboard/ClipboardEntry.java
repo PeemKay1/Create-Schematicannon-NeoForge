@@ -3,11 +3,16 @@ package com.bikerboys.schematicannon.content.equipment.clipboard;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.createmod.catnip.nbt.NBTHelper;
+import com.bikerboys.schematicannon.AllDataComponents;
+
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public class ClipboardEntry {
@@ -30,50 +35,70 @@ public class ClipboardEntry {
 	}
 
 	public static List<List<ClipboardEntry>> readAll(ItemStack clipboardItem) {
-		CompoundTag tag = clipboardItem.getTag();
-		if (tag == null)
+		CompoundTag data = clipboardItem.get(AllDataComponents.CLIPBOARD_DATA);
+		if (data == null)
 			return new ArrayList<>();
-		return NBTHelper.readCompoundList(tag.getList("Pages", Tag.TAG_COMPOUND), pageTag -> NBTHelper
-			.readCompoundList(pageTag.getList("Entries", Tag.TAG_COMPOUND), ClipboardEntry::readNBT));
+
+		List<List<ClipboardEntry>> pages = new ArrayList<>();
+		for (var pageElement : data.getListOrEmpty("Pages")) {
+			if (!(pageElement instanceof CompoundTag pageTag))
+				continue;
+			List<ClipboardEntry> page = new ArrayList<>();
+			for (var entryElement : pageTag.getListOrEmpty("Entries"))
+				if (entryElement instanceof CompoundTag entryTag)
+					page.add(readNBT(entryTag));
+			pages.add(page);
+		}
+		return pages;
 	}
 
 	public static List<ClipboardEntry> getLastViewedEntries(ItemStack heldItem) {
-		List<List<ClipboardEntry>> pages = ClipboardEntry.readAll(heldItem);
+		List<List<ClipboardEntry>> pages = readAll(heldItem);
 		if (pages.isEmpty())
 			return new ArrayList<>();
-		int page = heldItem.getTag() == null ? 0
-			: Math.min(heldItem.getTag()
-				.getInt("PreviouslyOpenedPage"), pages.size() - 1);
-		List<ClipboardEntry> entries = pages.get(page);
-		return entries;
+		CompoundTag data = heldItem.get(AllDataComponents.CLIPBOARD_DATA);
+		int page = data == null ? 0 : Math.min(data.getIntOr("PreviouslyOpenedPage", 0), pages.size() - 1);
+		return pages.get(page);
 	}
 
 	public static void saveAll(List<List<ClipboardEntry>> entries, ItemStack clipboardItem) {
-		CompoundTag tag = clipboardItem.getOrCreateTag();
-		tag.put("Pages", NBTHelper.writeCompoundList(entries, list -> {
+		CompoundTag data = clipboardItem.getOrDefault(AllDataComponents.CLIPBOARD_DATA, new CompoundTag()).copy();
+		ListTag pageTags = new ListTag();
+		for (List<ClipboardEntry> page : entries) {
 			CompoundTag pageTag = new CompoundTag();
-			pageTag.put("Entries", NBTHelper.writeCompoundList(list, ClipboardEntry::writeNBT));
-			return pageTag;
-		}));
+			ListTag entryTags = new ListTag();
+			for (ClipboardEntry entry : page)
+				entryTags.add(entry.writeNBT());
+			pageTag.put("Entries", entryTags);
+			pageTags.add(pageTag);
+		}
+		data.put("Pages", pageTags);
+		clipboardItem.set(AllDataComponents.CLIPBOARD_DATA, data);
 	}
 
 	public CompoundTag writeNBT() {
 		CompoundTag nbt = new CompoundTag();
 		nbt.putBoolean("Checked", checked);
-		nbt.putString("Text", Component.Serializer.toJson(text));
+		nbt.store("Text", ComponentSerialization.CODEC, text);
 		if (icon.isEmpty())
 			return nbt;
-		nbt.put("Icon", icon.serializeNBT());
+		nbt.putString("Icon", BuiltInRegistries.ITEM.getKey(icon.getItem()).toString());
 		nbt.putInt("ItemAmount", itemAmount);
 		return nbt;
 	}
 
 	public static ClipboardEntry readNBT(CompoundTag tag) {
-		ClipboardEntry clipboardEntry =
-			new ClipboardEntry(tag.getBoolean("Checked"), Component.Serializer.fromJson(tag.getString("Text")));
-		if (tag.contains("Icon"))
-			clipboardEntry.displayItem(ItemStack.of(tag.getCompound("Icon")), tag.getInt("ItemAmount"));
-		return clipboardEntry;
+		MutableComponent text = tag.read("Text", ComponentSerialization.CODEC)
+			.map(Component::copy)
+			.orElseGet(Component::empty);
+		ClipboardEntry entry = new ClipboardEntry(tag.getBooleanOr("Checked", false), text);
+		String itemId = tag.getStringOr("Icon", "");
+		Identifier id = Identifier.tryParse(itemId);
+		if (id != null) {
+			Item item = BuiltInRegistries.ITEM.getValue(id);
+			if (item != null)
+				entry.displayItem(new ItemStack(item), tag.getIntOr("ItemAmount", 0));
+		}
+		return entry;
 	}
-
 }

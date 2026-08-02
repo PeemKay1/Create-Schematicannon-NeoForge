@@ -1,20 +1,24 @@
 package com.bikerboys.schematicannon.content.schematics.cannon;
 
-import java.util.Optional;
-
 import com.bikerboys.schematicannon.foundation.utility.BlockHelper;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderGetter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityProcessor;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public abstract class LaunchedItem {
 
@@ -45,36 +49,63 @@ public abstract class LaunchedItem {
 			ticksRemaining--;
 			return false;
 		}
-		if (world.isClientSide)
+		if (world.isClientSide())
 			return false;
 
 		place(world);
 		return true;
 	}
 
-	public CompoundTag serializeNBT() {
-		CompoundTag c = new CompoundTag();
-		c.putInt("TotalTicks", totalTicks);
-		c.putInt("TicksLeft", ticksRemaining);
-		c.put("Stack", stack.serializeNBT());
-		c.put("Target", NbtUtils.writeBlockPos(target));
-		return c;
+	public void write(ValueOutput output) {
+		output.putInt("TotalTicks", totalTicks);
+		output.putInt("TicksLeft", ticksRemaining);
+		output.store("Stack", ItemStack.CODEC, stack);
+		output.store("Target", BlockPos.CODEC, target);
 	}
 
-	public static LaunchedItem fromNBT(CompoundTag c, HolderGetter<Block> holderGetter) {
-		LaunchedItem launched = c.contains("BlockState") ? new LaunchedItem.ForBlockState() : new LaunchedItem.ForEntity();
+	public static LaunchedItem from(ValueInput input) {
+		LaunchedItem launched = input.read("BlockState", BlockState.CODEC).isPresent()
+			? new LaunchedItem.ForBlockState()
+			: new LaunchedItem.ForEntity();
 
-		launched.readNBT(c, holderGetter);
+		launched.read(input);
 		return launched;
 	}
 
 	abstract void place(Level world);
 
-	void readNBT(CompoundTag c, HolderGetter<Block> holderGetter) {
-		target = NbtUtils.readBlockPos(c.getCompound("Target"));
-		ticksRemaining = c.getInt("TicksLeft");
-		totalTicks = c.getInt("TotalTicks");
-		stack = ItemStack.of(c.getCompound("Stack"));
+	void read(ValueInput input) {
+		target = input.read("Target", BlockPos.CODEC).orElse(BlockPos.ZERO);
+		ticksRemaining = input.getIntOr("TicksLeft", 0);
+		totalTicks = input.getIntOr("TotalTicks", ticksRemaining);
+		stack = input.read("Stack", ItemStack.CODEC).orElse(ItemStack.EMPTY);
+	}
+
+	/**
+	 * Reads the 1.20.1 representation so in-flight cannon shots survive a world upgrade.
+	 */
+	public static LaunchedItem fromLegacyNBT(CompoundTag nbt, HolderLookup.Provider registries) {
+		LaunchedItem launched = nbt.contains("BlockState") ? new ForBlockState() : new ForEntity();
+		launched.target = nbt.getCompound("Target")
+			.map(target -> new BlockPos(target.getIntOr("X", 0), target.getIntOr("Y", 0), target.getIntOr("Z", 0)))
+			.orElse(BlockPos.ZERO);
+		launched.ticksRemaining = nbt.getIntOr("TicksLeft", 0);
+		launched.totalTicks = nbt.getIntOr("TotalTicks", launched.ticksRemaining);
+		launched.stack = nbt.getCompound("Stack")
+			.flatMap(stack -> ItemStack.CODEC
+				.parse(registries.createSerializationContext(NbtOps.INSTANCE), stack)
+				.result())
+			.orElse(ItemStack.EMPTY);
+
+		if (launched instanceof ForBlockState block) {
+			block.state = nbt.getCompound("BlockState")
+				.map(state -> NbtUtils.readBlockState(registries.lookupOrThrow(Registries.BLOCK), state))
+				.orElse(net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+			block.data = nbt.getCompound("Data").orElse(null);
+		} else if (launched instanceof ForEntity entity) {
+			entity.deferredTag = nbt.getCompound("Entity").orElse(null);
+		}
+		return launched;
 	}
 
 	public static class ForBlockState extends LaunchedItem {
@@ -90,26 +121,25 @@ public abstract class LaunchedItem {
 		}
 
 		@Override
-		public CompoundTag serializeNBT() {
-			CompoundTag serializeNBT = super.serializeNBT();
-			serializeNBT.put("BlockState", NbtUtils.writeBlockState(state));
+		public void write(ValueOutput output) {
+			super.write(output);
+			output.store("BlockState", BlockState.CODEC, state);
 			if (data != null) {
-				data.remove("x");
-				data.remove("y");
-				data.remove("z");
-				data.remove("id");
-				serializeNBT.put("Data", data);
+				CompoundTag cleanedData = data.copy();
+				cleanedData.remove("x");
+				cleanedData.remove("y");
+				cleanedData.remove("z");
+				cleanedData.remove("id");
+				output.store("Data", CompoundTag.CODEC, cleanedData);
 			}
-			return serializeNBT;
 		}
 
 		@Override
-		void readNBT(CompoundTag nbt, HolderGetter<Block> holderGetter) {
-			super.readNBT(nbt, holderGetter);
-			state = NbtUtils.readBlockState(holderGetter, nbt.getCompound("BlockState"));
-			if (nbt.contains("Data", Tag.TAG_COMPOUND)) {
-				data = nbt.getCompound("Data");
-			}
+		void read(ValueInput input) {
+			super.read(input);
+			state = input.read("BlockState", BlockState.CODEC)
+				.orElse(net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+			data = input.read("Data", CompoundTag.CODEC).orElse(null);
 		}
 
 		@Override
@@ -136,11 +166,11 @@ public abstract class LaunchedItem {
 		public boolean update(Level world) {
 			if (deferredTag != null && entity == null) {
 				try {
-					Optional<Entity> loadEntityUnchecked = EntityType.create(deferredTag, world);
-					if (!loadEntityUnchecked.isPresent())
+					ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, world.registryAccess(), deferredTag);
+					entity = EntityType.loadEntityRecursive(input, world, EntitySpawnReason.LOAD, EntityProcessor.NOP);
+					if (entity == null)
 						return true;
-					entity = loadEntityUnchecked.get();
-				} catch (Exception var3) {
+				} catch (Exception ignored) {
 					return true;
 				}
 				deferredTag = null;
@@ -149,18 +179,18 @@ public abstract class LaunchedItem {
 		}
 
 		@Override
-		public CompoundTag serializeNBT() {
-			CompoundTag serializeNBT = super.serializeNBT();
+		public void write(ValueOutput output) {
+			super.write(output);
 			if (entity != null)
-				serializeNBT.put("Entity", entity.serializeNBT());
-			return serializeNBT;
+				entity.save(output.child("Entity"));
+			else if (deferredTag != null)
+				output.store("Entity", CompoundTag.CODEC, deferredTag);
 		}
 
 		@Override
-		void readNBT(CompoundTag nbt, HolderGetter<Block> holderGetter) {
-			super.readNBT(nbt, holderGetter);
-			if (nbt.contains("Entity"))
-				deferredTag = nbt.getCompound("Entity");
+		void read(ValueInput input) {
+			super.read(input);
+			deferredTag = input.read("Entity", CompoundTag.CODEC).orElse(null);
 		}
 
 		@Override

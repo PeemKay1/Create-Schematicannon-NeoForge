@@ -12,12 +12,12 @@ import com.bikerboys.schematicannon.content.schematics.client.SchematicTransform
 import com.bikerboys.schematicannon.foundation.utility.RaycastHelper;
 import com.bikerboys.schematicannon.foundation.utility.RaycastHelper.PredicateTraceResult;
 
-import net.createmod.catnip.animation.AnimationTickHolder;
-import net.createmod.catnip.math.VecHelper;
-import net.createmod.catnip.outliner.AABBOutline;
-import net.createmod.catnip.render.SuperRenderTypeBuffer;
+import com.bikerboys.schematicannon.foundation.utility.AnimationTickHolder;
+import com.bikerboys.schematicannon.foundation.utility.VecHelper;
+import com.bikerboys.schematicannon.foundation.render.AABBOutline;
+import com.bikerboys.schematicannon.foundation.render.SuperRenderTypeBuffer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,7 +26,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.client.gui.overlay.ForgeGui;
 
 public abstract class SchematicToolBase implements ISchematicTool {
 
@@ -127,7 +126,11 @@ public abstract class SchematicToolBase implements ISchematicTool {
 	}
 
 	@Override
-	public void renderOverlay(ForgeGui gui, GuiGraphics graphics, float partialTicks, int width, int height) {
+	public void renderOverlay(GuiGraphicsExtractor graphics, float partialTicks, int width, int height) {
+	}
+
+	public BlockPos getSelectedPos() {
+		return selectedPos;
 	}
 
 	@Override

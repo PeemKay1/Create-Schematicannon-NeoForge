@@ -3,9 +3,9 @@ package com.bikerboys.schematicannon.content.schematics.client.tools;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.bikerboys.schematicannon.AllSpecialTextures;
 
-import net.createmod.catnip.render.SuperRenderTypeBuffer;
-import net.createmod.catnip.animation.AnimationTickHolder;
-import net.createmod.catnip.outliner.AABBOutline;
+import com.bikerboys.schematicannon.foundation.render.SuperRenderTypeBuffer;
+import com.bikerboys.schematicannon.foundation.utility.AnimationTickHolder;
+import com.bikerboys.schematicannon.foundation.render.AABBOutline;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.AxisDirection;
@@ -59,8 +59,7 @@ public class FlipTool extends PlacementToolBase {
 		Direction facing = selectedFace.getClockWise();
 		AABB bounds = schematicHandler.getBounds();
 
-		Vec3 directionVec = Vec3.atLowerCornerOf(Direction.get(AxisDirection.POSITIVE, facing.getAxis())
-			.getNormal());
+		Vec3 directionVec = Direction.get(AxisDirection.POSITIVE, facing.getAxis()).getUnitVec3();
 		Vec3 boundsSize = new Vec3(bounds.getXsize(), bounds.getYsize(), bounds.getZsize());
 		Vec3 vec = boundsSize.multiply(directionVec);
 		bounds = bounds.contract(vec.x, vec.y, vec.z)

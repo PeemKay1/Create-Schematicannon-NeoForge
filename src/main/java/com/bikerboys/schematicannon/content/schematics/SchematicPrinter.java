@@ -2,21 +2,20 @@ package com.bikerboys.schematicannon.content.schematics;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import com.bikerboys.schematicannon.AllDataComponents;
 import com.bikerboys.schematicannon.Schematicannon;
 import com.bikerboys.schematicannon.content.schematics.cannon.MaterialChecklist;
 import com.bikerboys.schematicannon.content.schematics.requirement.ItemRequirement;
 import com.bikerboys.schematicannon.foundation.blockEntity.IMergeableBE;
 import com.bikerboys.schematicannon.foundation.utility.BlockHelper;
 
-import net.createmod.catnip.levelWrappers.SchematicLevel;
-import net.createmod.catnip.math.BBHelper;
+import com.bikerboys.schematicannon.foundation.virtualWorld.SchematicLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -31,6 +30,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.storage.TagValueInput;
 
 public class SchematicPrinter {
 
@@ -56,46 +56,50 @@ public class SchematicPrinter {
 
 	public void fromTag(CompoundTag compound, boolean clientPacket) {
 		if (compound.contains("CurrentPos"))
-			currentPos = NbtUtils.readBlockPos(compound.getCompound("CurrentPos"));
+			currentPos = readPos(compound.getCompoundOrEmpty("CurrentPos"));
 		if (clientPacket) {
 			schematicLoaded = false;
 			if (compound.contains("Anchor")) {
-				schematicAnchor = NbtUtils.readBlockPos(compound.getCompound("Anchor"));
+				schematicAnchor = readPos(compound.getCompoundOrEmpty("Anchor"));
 				schematicLoaded = true;
 			}
 		}
 
-		printingEntityIndex = compound.getInt("EntityProgress");
-		printStage = PrintStage.valueOf(compound.getString("PrintStage"));
-		compound.getList("DeferredBlocks", 10).stream()
-			.map(p -> NbtUtils.readBlockPos((CompoundTag) p))
-			.collect(Collectors.toCollection(() -> deferredBlocks));
+		printingEntityIndex = compound.getIntOr("EntityProgress", -1);
+		try {
+			printStage = PrintStage.valueOf(compound.getStringOr("PrintStage", PrintStage.BLOCKS.name()));
+		} catch (IllegalArgumentException ignored) {
+			printStage = PrintStage.BLOCKS;
+		}
+		deferredBlocks.clear();
+		for (var entry : compound.getListOrEmpty("DeferredBlocks"))
+			if (entry instanceof CompoundTag pos)
+				deferredBlocks.add(readPos(pos));
 	}
 
 	public void write(CompoundTag compound) {
 		if (currentPos != null)
-			compound.put("CurrentPos", NbtUtils.writeBlockPos(currentPos));
+			compound.put("CurrentPos", writePos(currentPos));
 		if (schematicAnchor != null)
-			compound.put("Anchor", NbtUtils.writeBlockPos(schematicAnchor));
+			compound.put("Anchor", writePos(schematicAnchor));
 
 		compound.putInt("EntityProgress", printingEntityIndex);
 		compound.putString("PrintStage", printStage.name());
 		ListTag tagDeferredBlocks = new ListTag();
 		for (BlockPos p : deferredBlocks)
-			tagDeferredBlocks.add(NbtUtils.writeBlockPos(p));
+			tagDeferredBlocks.add(writePos(p));
 		compound.put("DeferredBlocks", tagDeferredBlocks);
 	}
 
 	public void loadSchematic(ItemStack blueprint, Level originalWorld, boolean processNBT) {
-		if (!blueprint.hasTag() || !blueprint.getTag().getBoolean("Deployed"))
+		if (!blueprint.getOrDefault(AllDataComponents.SCHEMATIC_DEPLOYED, false))
 			return;
 
 		StructureTemplate activeTemplate =
 			SchematicItem.loadSchematic(originalWorld, blueprint);
 		StructurePlaceSettings settings = SchematicItem.getSettings(blueprint, processNBT);
 
-		schematicAnchor = NbtUtils.readBlockPos(blueprint.getTag()
-			.getCompound("Anchor"));
+		schematicAnchor = blueprint.getOrDefault(AllDataComponents.SCHEMATIC_ANCHOR, BlockPos.ZERO);
 		blockReader = new SchematicLevel(schematicAnchor, originalWorld);
 
 		try {
@@ -110,10 +114,7 @@ public class SchematicPrinter {
 
 		BlockPos extraBounds = StructureTemplate.calculateRelativePosition(settings, new BlockPos(activeTemplate.getSize())
 			.offset(-1, -1, -1));
-		blockReader.setBounds(BBHelper.encapsulate(blockReader.getBounds(), extraBounds));
-
-
-		for (BlockEntity be : blockReader.getBlockEntities())
+		blockReader.setBounds(encapsulate(blockReader.getBounds(), extraBounds));
 
 		printingEntityIndex = -1;
 		printStage = PrintStage.BLOCKS;
@@ -232,7 +233,7 @@ public class SchematicPrinter {
 			|| (toReplaceOther != null && toReplaceOther.getDestroySpeed(world, pos) == -1))
 			return false;
 
-		boolean isNormalCube = state.isRedstoneConductor(blockReader, currentPos);
+		boolean isNormalCube = state.isRedstoneConductor(blockReader, pos);
 		return predicate.shouldPlace(pos, state, blockEntity, toReplace, toReplaceOther, isNormalCube);
 	}
 
@@ -247,7 +248,8 @@ public class SchematicPrinter {
 			blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(target, blockState);
 			CompoundTag data = BlockHelper.prepareBlockEntityData(blockState, blockEntity);
 			if (blockEntity != null && data != null)
-				blockEntity.load(data);
+				blockEntity.loadWithComponents(TagValueInput.create(
+					ProblemReporter.DISCARDING, blockReader.registryAccess(), data));
 		}
 		return ItemRequirement.of(blockState, blockEntity);
 	}
@@ -280,9 +282,9 @@ public class SchematicPrinter {
 		for (Entity entity : blockReader.getEntityList()) {
 			ItemRequirement requirement = ItemRequirement.of(entity);
 			if (requirement.isEmpty())
-				return;
+				continue;
 			if (requirement.isInvalid())
-				return;
+				continue;
 			checklist.require(requirement);
 		}
 	}
@@ -331,7 +333,7 @@ public class SchematicPrinter {
 			currentPos = new BlockPos(currentPos.getX(), currentPos.getY() + 1, bounds.minZ()).west();
 
 		// End of blocks reached
-		if (currentPos.getY() > bounds.getYSpan()) {
+		if (currentPos.getY() > bounds.maxY()) {
 			printStage = PrintStage.DEFERRED_BLOCKS;
 			return false;
 		}
@@ -341,6 +343,25 @@ public class SchematicPrinter {
 
 	public static boolean shouldDeferBlock(BlockState state) {
 		return false;
+	}
+
+	private static CompoundTag writePos(BlockPos pos) {
+		CompoundTag tag = new CompoundTag();
+		tag.putInt("X", pos.getX());
+		tag.putInt("Y", pos.getY());
+		tag.putInt("Z", pos.getZ());
+		return tag;
+	}
+
+	private static BlockPos readPos(CompoundTag tag) {
+		return new BlockPos(tag.getIntOr("X", 0), tag.getIntOr("Y", 0), tag.getIntOr("Z", 0));
+	}
+
+	private static BoundingBox encapsulate(BoundingBox bounds, BlockPos pos) {
+		return new BoundingBox(
+			Math.min(bounds.minX(), pos.getX()), Math.min(bounds.minY(), pos.getY()),
+			Math.min(bounds.minZ(), pos.getZ()), Math.max(bounds.maxX(), pos.getX()),
+			Math.max(bounds.maxY(), pos.getY()), Math.max(bounds.maxZ(), pos.getZ()));
 	}
 
 	public void sendBlockUpdates(Level level) {

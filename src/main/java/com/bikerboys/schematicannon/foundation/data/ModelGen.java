@@ -5,22 +5,22 @@ import com.tterrag.registrate.builders.ItemBuilder;
 import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 
-import net.minecraftforge.client.model.generators.BlockStateProvider;
-import net.minecraftforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
+import net.neoforged.neoforge.client.model.generators.ModelFile;
 
 public class ModelGen {
 
 	public static ModelFile createOvergrown(DataGenContext<Block, ? extends Block> ctx, BlockStateProvider prov,
-											ResourceLocation block, ResourceLocation overlay) {
+											Identifier block, Identifier overlay) {
 		return createOvergrown(ctx, prov, block, block, block, overlay);
 	}
 
 	public static ModelFile createOvergrown(DataGenContext<Block, ? extends Block> ctx, BlockStateProvider prov,
-											ResourceLocation side, ResourceLocation top, ResourceLocation bottom, ResourceLocation overlay) {
+											Identifier side, Identifier top, Identifier bottom, Identifier overlay) {
 		return prov.models()
 			.withExistingParent(ctx.getName(), Schematicannon.asResource("block/overgrown"))
 			.texture("particle", side)

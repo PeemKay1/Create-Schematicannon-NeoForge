@@ -1,25 +1,25 @@
 package com.bikerboys.schematicannon;
 
-import dev.engine_room.flywheel.lib.model.baked.PartialModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.resources.model.ModelDebugName;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel;
+import net.neoforged.neoforge.client.model.standalone.StandaloneModelKey;
 
-public class AllPartialModels {
+public final class AllPartialModels {
+	public static final StandaloneModelKey<BlockStateModel> SCHEMATICANNON_CONNECTOR = key("schematicannon_connector");
+	public static final StandaloneModelKey<BlockStateModel> SCHEMATICANNON_PIPE = key("schematicannon_pipe");
 
-	public static final PartialModel
-
-	SCHEMATICANNON_CONNECTOR = block("schematicannon/connector"), SCHEMATICANNON_PIPE = block("schematicannon/pipe");
-
-
-
-	private static PartialModel block(String path) {
-		return PartialModel.of(Schematicannon.asResource("block/" + path));
+	private static StandaloneModelKey<BlockStateModel> key(String name) {
+		return new StandaloneModelKey<>((ModelDebugName) () -> Schematicannon.ID + ":" + name);
 	}
 
-	private static PartialModel entity(String path) {
-		return PartialModel.of(Schematicannon.asResource("entity/" + path));
+	public static void register(ModelEvent.RegisterStandalone event) {
+		event.register(SCHEMATICANNON_CONNECTOR, SimpleUnbakedStandaloneModel.blockStateModel(
+			Schematicannon.asResource("block/schematicannon/connector")));
+		event.register(SCHEMATICANNON_PIPE, SimpleUnbakedStandaloneModel.blockStateModel(
+			Schematicannon.asResource("block/schematicannon/pipe")));
 	}
 
-	public static void init() {
-		// init static fields
-	}
-
+	private AllPartialModels() {}
 }

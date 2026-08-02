@@ -31,7 +31,7 @@ public class DeferralBehaviour extends BlockEntityBehaviour {
 
 	@Override
 	public void read(CompoundTag nbt, boolean clientPacket) {
-		needsUpdate = nbt.getBoolean("NeedsUpdate");
+		needsUpdate = nbt.getBooleanOr("NeedsUpdate", false);
 		super.read(nbt, clientPacket);
 	}
 

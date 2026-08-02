@@ -1,73 +1,39 @@
 package com.bikerboys.schematicannon;
 
-import java.util.function.Supplier;
-
-
+import com.bikerboys.schematicannon.foundation.particle.AirParticle;
 import com.bikerboys.schematicannon.foundation.particle.AirParticleData;
-import com.bikerboys.schematicannon.foundation.particle.ICustomParticleData;
 
-import net.createmod.catnip.lang.Lang;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
-public enum AllParticleTypes {
+public final class AllParticleTypes {
+	private static final DeferredRegister<ParticleType<?>> TYPES =
+		DeferredRegister.create(Registries.PARTICLE_TYPE, Schematicannon.ID);
 
+	public static final DeferredHolder<ParticleType<?>, ParticleType<AirParticleData>> AIR = TYPES.register("air",
+		() -> new ParticleType<AirParticleData>(false) {
+			@Override
+			public com.mojang.serialization.MapCodec<AirParticleData> codec() {
+				return AirParticleData.CODEC;
+			}
 
-	AIR(AirParticleData::new);
+			@Override
+			public net.minecraft.network.codec.StreamCodec<? super net.minecraft.network.RegistryFriendlyByteBuf, AirParticleData> streamCodec() {
+				return AirParticleData.STREAM_CODEC;
+			}
+		});
 
-
-	private final ParticleEntry<?> entry;
-
-	<D extends ParticleOptions> AllParticleTypes(Supplier<? extends ICustomParticleData<D>> typeFactory) {
-		String name = Lang.asId(name());
-		entry = new ParticleEntry<>(name, typeFactory);
+	public static void register(IEventBus eventBus) {
+		TYPES.register(eventBus);
 	}
 
-	public static void register(IEventBus modEventBus) {
-		ParticleEntry.REGISTER.register(modEventBus);
-	}
-
-	@OnlyIn(Dist.CLIENT)
 	public static void registerFactories(RegisterParticleProvidersEvent event) {
-		for (AllParticleTypes particle : values())
-			particle.entry.registerFactory(event);
+		event.registerSpriteSet(AIR.get(), AirParticle.Factory::new);
 	}
 
-	public ParticleType<?> get() {
-		return entry.object.get();
-	}
-
-	public String parameter() {
-		return entry.name;
-	}
-
-	private static class ParticleEntry<D extends ParticleOptions> {
-		private static final DeferredRegister<ParticleType<?>> REGISTER = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, Schematicannon.ID);
-
-		private final String name;
-		private final Supplier<? extends ICustomParticleData<D>> typeFactory;
-		private final RegistryObject<ParticleType<D>> object;
-
-		public ParticleEntry(String name, Supplier<? extends ICustomParticleData<D>> typeFactory) {
-			this.name = name;
-			this.typeFactory = typeFactory;
-
-			object = REGISTER.register(name, () -> this.typeFactory.get().createType());
-		}
-
-		@OnlyIn(Dist.CLIENT)
-		public void registerFactory(RegisterParticleProvidersEvent event) {
-			typeFactory.get()
-				.register(object.get(), event);
-		}
-
-	}
-
+	private AllParticleTypes() {}
 }

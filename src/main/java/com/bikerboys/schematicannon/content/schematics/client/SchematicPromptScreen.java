@@ -9,12 +9,14 @@ import com.bikerboys.schematicannon.foundation.gui.AllIcons;
 import com.bikerboys.schematicannon.foundation.gui.widget.IconButton;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 
-import net.createmod.catnip.gui.AbstractSimiScreen;
-import net.createmod.catnip.gui.element.GuiGameElement;
-import net.minecraft.client.gui.GuiGraphics;
+import com.bikerboys.schematicannon.foundation.gui.AbstractSimiScreen;
+import com.bikerboys.schematicannon.foundation.gui.GuiGameElement;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 public class SchematicPromptScreen extends AbstractSimiScreen {
 
@@ -75,18 +77,18 @@ public class SchematicPromptScreen extends AbstractSimiScreen {
 	}
 
 	@Override
-	protected void renderWindow(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+	protected void renderWindow(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
 		int x = guiLeft;
 		int y = guiTop;
 
 		background.render(graphics, x, y);
-		graphics.drawString(font, title, x + (background.getWidth() - 8 - font.width(title)) / 2, y + 4, 0x505050, false);
+		graphics.text(font, title, x + (background.getWidth() - 8 - font.width(title)) / 2, y + 4, 0x505050, false);
 
-		GuiGameElement.of(AllItems.SCHEMATIC.asStack())
+		GuiGameElement.of(new ItemStack(AllItems.SCHEMATIC.get()))
 			.at(x + 22, y + 24, 0)
 			.render(graphics);
 
-		GuiGameElement.of(AllItems.SCHEMATIC_AND_QUILL.asStack())
+		GuiGameElement.of(new ItemStack(AllItems.SCHEMATIC_AND_QUILL.get()))
 			.scale(3)
 			.at(x + background.getWidth() + 6, y + background.getHeight() - 38, -200)
 			.render(graphics);
@@ -102,7 +104,7 @@ public class SchematicPromptScreen extends AbstractSimiScreen {
 			this.onClose();
 			return true;
 		}
-		return nameField.keyPressed(keyCode, p_keyPressed_2_, p_keyPressed_3_);
+		return nameField.keyPressed(new KeyEvent(keyCode, p_keyPressed_2_, p_keyPressed_3_));
 	}
 
 	private void confirm(boolean convertImmediately) {

@@ -3,15 +3,17 @@ package com.bikerboys.schematicannon.content.equipment.clipboard;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.serialization.MapCodec;
+import com.bikerboys.schematicannon.AllDataComponents;
 import com.bikerboys.schematicannon.AllBlockEntityTypes;
 import com.bikerboys.schematicannon.AllShapes;
 import com.bikerboys.schematicannon.foundation.block.IBE;
 import com.bikerboys.schematicannon.foundation.block.ProperWaterloggedBlock;
 
-import net.createmod.catnip.gui.ScreenOpener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -19,8 +21,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
@@ -35,20 +37,23 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.fml.DistExecutor;
+import net.neoforged.neoforge.common.util.FakePlayer;
 
 public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 	implements IBE<ClipboardBlockEntity>, ProperWaterloggedBlock {
 
 	public static final BooleanProperty WRITTEN = BooleanProperty.create("written");
+	public static final MapCodec<ClipboardBlock> CODEC = simpleCodec(ClipboardBlock::new);
 
 	public ClipboardBlock(Properties pProperties) {
 		super(pProperties);
 		registerDefaultState(defaultBlockState().setValue(WATERLOGGED, false)
 			.setValue(WRITTEN, false));
+	}
+
+	@Override
+	protected MapCodec<? extends ClipboardBlock> codec() {
+		return CODEC;
 	}
 
 	@Override
@@ -65,7 +70,7 @@ public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 			stateForPlacement = stateForPlacement.setValue(FACING, stateForPlacement.getValue(FACING)
 				.getOpposite());
 		return withWater(stateForPlacement, pContext).setValue(WRITTEN, pContext.getItemInHand()
-			.hasTag());
+			.has(AllDataComponents.CLIPBOARD_DATA));
 	}
 
 	@Override
@@ -83,8 +88,18 @@ public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 	}
 
 	@Override
-	public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand,
-		BlockHitResult pHit) {
+	protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer,
+			BlockHitResult pHit) {
+		return useClipboard(pState, pLevel, pPos, pPlayer);
+	}
+
+	@Override
+	protected InteractionResult useItemOn(ItemStack stack, BlockState pState, Level pLevel, BlockPos pPos,
+			Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+		return useClipboard(pState, pLevel, pPos, pPlayer);
+	}
+
+	private InteractionResult useClipboard(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer) {
 		if (pPlayer.isShiftKeyDown()) {
 			breakAndCollect(pState, pLevel, pPos, pPlayer);
 			return InteractionResult.SUCCESS;
@@ -92,15 +107,15 @@ public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 
 		return onBlockEntityUse(pLevel, pPos, cbe -> {
 			if (pLevel.isClientSide())
-				DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> openScreen(pPlayer, cbe.dataContainer, pPos));
+				openScreen(pPlayer, cbe.dataContainer, pPos);
 			return InteractionResult.SUCCESS;
 		});
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	private void openScreen(Player player, ItemStack stack, BlockPos pos) {
 		if (Minecraft.getInstance().player == player)
-			ScreenOpener.open(new ClipboardScreen(player.getInventory().selected, stack, pos));
+			Minecraft.getInstance()
+				.setScreenAndShow(new ClipboardScreen(player.getInventory().getSelectedSlot(), stack, pos));
 	}
 
 	@Override
@@ -111,9 +126,9 @@ public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 	private void breakAndCollect(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer) {
 		if (pPlayer instanceof FakePlayer)
 			return;
-		if (pLevel.isClientSide)
+		if (pLevel.isClientSide())
 			return;
-		ItemStack cloneItemStack = getCloneItemStack(pLevel, pPos, pState);
+		ItemStack cloneItemStack = getClipboardStack(pLevel, pPos);
 		pLevel.destroyBlock(pPos, false);
 		if (pLevel.getBlockState(pPos) != pState)
 			pPlayer.getInventory()
@@ -121,19 +136,22 @@ public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 	}
 
 	@Override
-	public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
+	protected ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state, boolean includeData) {
+		return getClipboardStack(world, pos);
+	}
+
+	private ItemStack getClipboardStack(BlockGetter world, BlockPos pos) {
 		if (world.getBlockEntity(pos) instanceof ClipboardBlockEntity cbe)
-			return cbe.dataContainer;
+			return cbe.dataContainer.copy();
 		return new ItemStack(this);
 	}
 
 	@Override
-	public void playerWillDestroy(Level pLevel, BlockPos pPos, BlockState pState, Player pPlayer) {
-		if (!(pLevel.getBlockEntity(pPos) instanceof ClipboardBlockEntity cbe))
-			return;
-		if (pLevel.isClientSide || pPlayer.isCreative())
-			return;
-		Block.popResource(pLevel, pPos, cbe.dataContainer.copy());
+	public BlockState playerWillDestroy(Level pLevel, BlockPos pPos, BlockState pState, Player pPlayer) {
+		if (pLevel.getBlockEntity(pPos) instanceof ClipboardBlockEntity cbe
+			&& !pLevel.isClientSide() && !pPlayer.isCreative())
+			Block.popResource(pLevel, pPos, cbe.dataContainer.copy());
+		return super.playerWillDestroy(pLevel, pPos, pState, pPlayer);
 	}
 
 	@Override
@@ -151,10 +169,11 @@ public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 	}
 
 	@Override
-	public BlockState updateShape(BlockState pState, Direction pFacing, BlockState pFacingState, LevelAccessor pLevel,
-		BlockPos pCurrentPos, BlockPos pFacingPos) {
-		updateWater(pLevel, pState, pCurrentPos);
-		return super.updateShape(pState, pFacing, pFacingState, pLevel, pCurrentPos, pFacingPos);
+	protected BlockState updateShape(BlockState pState, LevelReader pLevel, ScheduledTickAccess ticks,
+			BlockPos pCurrentPos, Direction pFacing, BlockPos pFacingPos, BlockState pFacingState,
+			RandomSource random) {
+		updateWater(pLevel, ticks, pState, pCurrentPos);
+		return super.updateShape(pState, pLevel, ticks, pCurrentPos, pFacing, pFacingPos, pFacingState, random);
 	}
 
 	@Override

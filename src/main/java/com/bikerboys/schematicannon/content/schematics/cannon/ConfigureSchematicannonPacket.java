@@ -2,10 +2,10 @@ package com.bikerboys.schematicannon.content.schematics.cannon;
 
 import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonBlockEntity.State;
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public class ConfigureSchematicannonPacket extends SimplePacketBase {
 
@@ -32,14 +32,20 @@ public class ConfigureSchematicannonPacket extends SimplePacketBase {
 	}
 
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null || !(player.containerMenu instanceof SchematicannonMenu))
 				return;
 
 			SchematicannonBlockEntity be = ((SchematicannonMenu) player.containerMenu).contentHolder;
-			switch (option) {
+			apply(be, option, set);
+		});
+		return true;
+	}
+
+	public static void apply(SchematicannonBlockEntity be, Option option, boolean set) {
+		switch (option) {
 			case DONT_REPLACE:
 			case REPLACE_ANY:
 			case REPLACE_EMPTY:
@@ -67,11 +73,9 @@ public class ConfigureSchematicannonPacket extends SimplePacketBase {
 				break;
 			default:
 				break;
-			}
+		}
 
-			be.sendUpdate = true;
-		});
-		return true;
+		be.sendUpdate = true;
 	}
 
 }

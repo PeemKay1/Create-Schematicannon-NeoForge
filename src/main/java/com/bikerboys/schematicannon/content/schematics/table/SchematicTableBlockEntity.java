@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.bikerboys.schematicannon.foundation.blockEntity.SmartBlockEntity;
 import com.bikerboys.schematicannon.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.bikerboys.schematicannon.foundation.item.ItemHelper;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 import com.bikerboys.schematicannon.foundation.utility.IInteractionChecker;
 
@@ -18,7 +19,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.items.ItemStackHandler;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class SchematicTableBlockEntity extends SmartBlockEntity implements MenuProvider, IInteractionChecker {
 
@@ -49,20 +52,19 @@ public class SchematicTableBlockEntity extends SmartBlockEntity implements MenuP
 
 	public void sendToMenu(FriendlyByteBuf buffer) {
 		buffer.writeBlockPos(getBlockPos());
-		buffer.writeNbt(getUpdateTag());
+		buffer.writeNbt(writeClient(new CompoundTag()));
 	}
 
 	@Override
 	protected void read(CompoundTag compound, boolean clientPacket) {
-		inventory.deserializeNBT(compound.getCompound("Inventory"));
 		super.read(compound, clientPacket);
 
 		if (!clientPacket)
 			return;
 		if (compound.contains("Uploading")) {
 			isUploading = true;
-			uploadingSchematic = compound.getString("Schematic");
-			uploadingProgress = compound.getFloat("Progress");
+			uploadingSchematic = compound.getStringOr("Schematic", "");
+			uploadingProgress = compound.getFloatOr("Progress", 0);
 		} else {
 			isUploading = false;
 			uploadingSchematic = null;
@@ -72,7 +74,6 @@ public class SchematicTableBlockEntity extends SmartBlockEntity implements MenuP
 
 	@Override
 	protected void write(CompoundTag compound, boolean clientPacket) {
-		compound.put("Inventory", inventory.serializeNBT());
 		super.write(compound, clientPacket);
 
 		if (clientPacket && isUploading) {
@@ -80,6 +81,20 @@ public class SchematicTableBlockEntity extends SmartBlockEntity implements MenuP
 			compound.putString("Schematic", uploadingSchematic);
 			compound.putFloat("Progress", uploadingProgress);
 		}
+	}
+
+	public SchematicTableBlockEntity(BlockPos pos, BlockState state) {
+		this(com.bikerboys.schematicannon.AllBlockEntityTypes.SCHEMATIC_TABLE.get(), pos, state);
+	}
+
+	@Override
+	protected void readValue(ValueInput input) {
+		input.readChild("Inventory", inventory);
+	}
+
+	@Override
+	protected void writeValue(ValueOutput output) {
+		output.putChild("Inventory", inventory);
 	}
 
 	@Override
@@ -127,5 +142,12 @@ public class SchematicTableBlockEntity extends SmartBlockEntity implements MenuP
 
 	@Override
 	public void addBehaviours(List<BlockEntityBehaviour> behaviours) {}
+
+	@Override
+	public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+		if (level != null && !level.isClientSide())
+			ItemHelper.dropContents(level, pos, inventory);
+		super.preRemoveSideEffects(pos, state);
+	}
 
 }

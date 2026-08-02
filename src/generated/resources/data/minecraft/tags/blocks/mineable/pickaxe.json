@@ -1,7 +1,7 @@
 {
   "values": [
-    "create:schematicannon",
-    "create:schematic_table",
-    "create:clipboard"
+    "schematicannon:schematicannon",
+    "schematicannon:schematic_table",
+    "schematicannon:clipboard"
   ]
 }

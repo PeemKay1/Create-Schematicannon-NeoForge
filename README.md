@@ -1,46 +1,62 @@
+![Schematicannon](title.png)
 
+# Schematicannon for Minecraft 26.2
 
+An unofficial, standalone NeoForge port of the schematic tools and Schematicannon gameplay originally found in Create.
 
-![TITLE](title.png)
+This mod does not require Create at runtime. It uses its own mod id, registries, networking, saved data and menus while preserving the familiar workflow: capture a build, prepare the schematic, position its preview and let the cannon construct it from supplied materials.
 
+> **Status:** active development. The port is playable, but Minecraft 26.2 and its NeoForge toolchain are still evolving. Back up important worlds before testing.
 
+## Features
 
-# Description
+- Schematic and Quill area selection
+- Schematic Table compilation
+- movable, rotatable and flippable in-world previews
+- Schematicannon construction with nearby container support
+- material checklist clipboard
+- vanilla structure `.nbt` schematics
+- direct `.litematic` import
+- English and Russian localization
 
-This mod is an independent extension of the **Create** mod, adding the **schematic cannon** and all its schematics and related items. With the schematic and quill, you can select an area and create a schematic. By using a blank schematic in the schematic table to convert it, you can place it in the schematic cannon and watch as it automatically builds your designed structure! Currently, this mod is only compatible with **1.20.1 Forge**, but future versions may be supported.
+## Requirements
 
-## All credit goes to the Create team
+- Minecraft `26.2`
+- NeoForge `26.2.0.35-beta` or newer compatible build
+- Java version required by Minecraft 26.2
 
-This project is based on the Create mod and follows the **MIT License**. If the Create team wishes for me to take it down, I will respect their decision. I simply hope this mod provides a better experience for players. Create is an excellent mod, and if you haven't tried it yet, I strongly recommend you do!
+Create is not a runtime dependency.
 
----
+## Using schematics
 
-## FAQ
+1. Select an area with the Schematic and Quill and save it.
+2. Put a blank schematic into the Schematic Table and select the saved file.
+3. Hold the completed schematic to position, rotate or mirror its preview, then confirm placement.
+4. Put the schematic and required materials into the Schematicannon, or place a compatible container with materials nearby.
+5. Configure the cannon and start printing.
 
-**Is this mod allowed?**
-Yes, the Create mod is released under the MIT License, which allows me to use its features as long as I comply with the terms. If the Create team wants me to take it down, I will comply.
+Litematica files can be placed in the schematic directory and selected through the Schematic Table. The importer supports vanilla blocks and attempts to retain compatible block-state properties and block-entity data.
 
-**Is this mod compatible with the Create mod?**
-This mod is designed independently of the Create mod and may not be compatible.
+## Building
 
-**Will you make this for other versions or loaders?**
-If there is enough demand, I would be happy to develop this mod for other versions and loaders. Please let me know your thoughts in the comments!
+On Windows:
 
-**What are the recipes?**
-The recipes are based on the basic Create mod recipes, with the clipboard recipe using andesite instead of andesite alloy.
+```powershell
+.\gradlew.bat clean build
+```
 
-**How do I use it?**
-Use the schematic and quill to select an area, and press `Ctrl + scroll` to adjust the size. Right-click to name it and choose to save to file or upload immediately. Then use the schematic table to select your schematic and place it. After placing, use the schematic cannon to automatically build the structure, ensuring there is a storage container nearby to provide the required blocks.
+The built mod is written to `build/libs/`.
 
+## Credits and relationship to Create
 
+This is an independent, unofficial project and is not affiliated with, sponsored by or endorsed by the Create team.
 
----
-This project uses parts of [Original Project Name] (author: simibubi), which is licensed under the MIT License.
+The original schematic mechanics and portions of the implementation were derived from [Create](https://github.com/Creators-of-Create/Create), created by simibubi and the Creators of Create contributors. Some visual and audio resources in this development repository originate from or are adapted from Create. Ownership and license terms for those materials remain with their respective authors.
 
-This project includes the following modifications to the original code:
-- Modified functionality A
-- Optimized performance B
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before redistributing this project or its compiled artifacts.
 
-Original project link:
+The standalone Schematicannon project is based on [michiel1106/Create-schematicannon](https://github.com/michiel1106/Create-schematicannon). This Minecraft 26.2 NeoForge port is maintained by PeemKay1 and preserves the original Git history.
 
-[Magic of Create made by simibubi and all contributors！](https://github.com/original-project-url)
+## License
+
+Project code is provided under the [MIT License](LICENSE), except for third-party material identified in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The project license does not grant additional rights to third-party assets.

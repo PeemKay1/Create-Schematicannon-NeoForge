@@ -1,10 +1,10 @@
 package com.bikerboys.schematicannon.foundation.gui.menu;
 
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
+import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent.Context;
 
 public class ClearMenuPacket extends SimplePacketBase {
 
@@ -16,7 +16,7 @@ public class ClearMenuPacket extends SimplePacketBase {
 	public void write(FriendlyByteBuf buffer) {}
 
 	@Override
-	public boolean handle(Context context) {
+	public boolean handle(PacketContext context) {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null)

@@ -2,21 +2,18 @@ package com.bikerboys.schematicannon.foundation.networking;
 
 import java.util.HashSet;
 
-import com.bikerboys.schematicannon.AllPackets;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.network.NetworkEvent.Context;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public interface ISyncPersistentData {
 
 	void onPersistentDataUpdated();
 
 	default void syncPersistentDataWithTracking(Entity self) {
-		AllPackets.getChannel().send(PacketDistributor.TRACKING_ENTITY.with(() -> self), new PersistentDataPacket(self));
+		PacketDistributor.sendToPlayersTrackingEntity(self, new PersistentDataPacket(self));
 	}
 
 	class PersistentDataPacket extends SimplePacketBase {
@@ -42,11 +39,11 @@ public interface ISyncPersistentData {
 		}
 
 		@Override
-		public boolean handle(Context context) {
+		public boolean handle(PacketContext context) {
 			context.enqueueWork(() -> {
 				Entity entityByID = Minecraft.getInstance().level.getEntity(entityId);
 				CompoundTag data = entityByID.getPersistentData();
-				new HashSet<>(data.getAllKeys()).forEach(data::remove);
+				new HashSet<>(data.keySet()).forEach(data::remove);
 				data.merge(readData);
 				if (!(entityByID instanceof ISyncPersistentData))
 					return;
