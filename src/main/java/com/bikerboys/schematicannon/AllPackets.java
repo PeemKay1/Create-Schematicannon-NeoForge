@@ -13,18 +13,15 @@ import com.bikerboys.schematicannon.content.schematics.packet.SchematicSyncPacke
 import com.bikerboys.schematicannon.content.schematics.packet.SchematicUploadPacket;
 import com.bikerboys.schematicannon.foundation.gui.menu.ClearMenuPacket;
 import com.bikerboys.schematicannon.foundation.gui.menu.GhostItemSubmitPacket;
-import com.bikerboys.schematicannon.foundation.networking.ISyncPersistentData;
 import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
-import com.bikerboys.schematicannon.foundation.utility.ServerSpeedProvider;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 /** Network protocol for Schematicannon's gameplay and GUI synchronization. */
 public enum AllPackets {
@@ -36,9 +33,7 @@ public enum AllPackets {
     INSTANT_SCHEMATIC(InstantSchematicPacket.class, InstantSchematicPacket::new, Side.SERVER),
     SYNC_SCHEMATIC(SchematicSyncPacket.class, SchematicSyncPacket::new, Side.SERVER),
     SUBMIT_GHOST_ITEM(GhostItemSubmitPacket.class, GhostItemSubmitPacket::new, Side.SERVER),
-    CLIPBOARD_EDIT(ClipboardEditPacket.class, ClipboardEditPacket::new, Side.SERVER),
-    SERVER_SPEED(ServerSpeedProvider.Packet.class, ServerSpeedProvider.Packet::new, Side.CLIENT),
-    PERSISTENT_DATA(ISyncPersistentData.PersistentDataPacket.class, ISyncPersistentData.PersistentDataPacket::new, Side.CLIENT);
+    CLIPBOARD_EDIT(ClipboardEditPacket.class, ClipboardEditPacket::new, Side.SERVER);
 
     public static final String NETWORK_VERSION = "4";
     private static final Map<Class<?>, AllPackets> BY_CLASS = new HashMap<>();
@@ -63,21 +58,25 @@ public enum AllPackets {
         this.codec = StreamCodec.ofMember(SimplePacketBase::write, buffer -> this.decoder.apply(buffer));
     }
 
-    public static void register(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar(Schematicannon.ID).versioned(NETWORK_VERSION);
-        for (AllPackets packet : values())
-            if (packet.side == Side.SERVER)
-                registrar.playToServer(packet.payloadType, packet.codec,
-                        (payload, context) -> payload.handle(new PacketContext(context)));
-            else
-                registrar.playToClient(packet.payloadType, packet.codec);
+    public static void register() {
+        for (AllPackets packet : values()) {
+            if (packet.side == Side.SERVER) {
+                PayloadTypeRegistry.serverboundPlay().register(packet.payloadType, packet.codec);
+                ServerPlayNetworking.registerGlobalReceiver(packet.payloadType,
+                    (payload, context) -> payload.handle(
+                        new PacketContext(context.player(), context.server())));
+            } else {
+                PayloadTypeRegistry.clientboundPlay().register(packet.payloadType, packet.codec);
+            }
+        }
     }
 
-    public static void registerClient(RegisterClientPayloadHandlersEvent event) {
+    public static void registerClient() {
         for (AllPackets packet : values())
             if (packet.side == Side.CLIENT)
-                event.register(packet.payloadType,
-                        (payload, context) -> payload.handle(new PacketContext(context)));
+                ClientPlayNetworking.registerGlobalReceiver(packet.payloadType,
+                    (payload, context) -> payload.handle(
+                        new PacketContext(null, context.client())));
     }
 
     public static CustomPacketPayload.Type<SimplePacketBase> typeOf(Class<?> packetClass) {
@@ -93,7 +92,7 @@ public enum AllPackets {
 
     public static final class ChannelFacade {
         public void sendToServer(SimplePacketBase packet) {
-            ClientPacketDistributor.sendToServer(packet);
+            ClientPlayNetworking.send(packet);
         }
     }
 

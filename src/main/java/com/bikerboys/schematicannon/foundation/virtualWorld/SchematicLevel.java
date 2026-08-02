@@ -28,6 +28,7 @@ import net.minecraft.world.attribute.EnvironmentAttributeSystem;
 import net.minecraft.world.clock.ClockManager;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.ItemFrame;
@@ -65,7 +66,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.ticks.BlackholeTickAccess;
 import net.minecraft.world.ticks.LevelTickAccess;
-import net.neoforged.neoforge.entity.PartEntity;
 
 /**
  * In-memory level used to place and inspect structure templates without touching
@@ -73,6 +73,7 @@ import net.neoforged.neoforge.entity.PartEntity;
  * or client-only classes, so the cannon can use it on dedicated servers.
  */
 public class SchematicLevel extends Level implements ServerLevelAccessor {
+	@Override public Collection<EnderDragonPart> dragonParts() { return Collections.emptyList(); }
 	private final Level wrapped;
 	private final BlockPos anchor;
 	private final Map<BlockPos, BlockState> blocks = new HashMap<>();
@@ -297,7 +298,6 @@ public class SchematicLevel extends Level implements ServerLevelAccessor {
 	@Override public void setRespawnData(LevelData.RespawnData data) {}
 	@Override public LevelData.RespawnData getRespawnData() { return wrapped.getRespawnData(); }
 	@Override public Entity getEntity(int id) { return null; }
-	@Override public Collection<? extends PartEntity<?>> dragonParts() { return Collections.emptyList(); }
 	@Override public TickRateManager tickRateManager() { return wrapped.tickRateManager(); }
 	@Override public MapItemSavedData getMapData(MapId id) { return wrapped.getMapData(id); }
 	@Override public void destroyBlockProgress(int breakerId, BlockPos pos, int progress) {}

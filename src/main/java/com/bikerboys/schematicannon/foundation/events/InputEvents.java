@@ -1,43 +1,6 @@
 package com.bikerboys.schematicannon.foundation.events;
 
-import com.bikerboys.schematicannon.SchematicannonClient;
-
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-
-@EventBusSubscriber(Dist.CLIENT)
 public class InputEvents {
-
-	@SubscribeEvent
-	public static void onKeyInput(InputEvent.Key event) {
-		int key = event.getKey();
-		boolean pressed = !(event.getAction() == 0);
-
-		SchematicannonClient.SCHEMATIC_HANDLER.onKeyInput(key, pressed);
+	public static void register() {
 	}
-
-	@SubscribeEvent
-	public static void onMouseScrolled(InputEvent.MouseScrollingEvent event) {
-		double delta = event.getScrollDeltaY();
-//		CollisionDebugger.onScroll(delta);
-		boolean cancelled = SchematicannonClient.SCHEMATIC_HANDLER.mouseScrolled(delta)
-			|| SchematicannonClient.SCHEMATIC_AND_QUILL_HANDLER.mouseScrolled(delta);
-		event.setCanceled(cancelled);
-	}
-
-	@SubscribeEvent
-	public static void onMouseInput(InputEvent.MouseButton.Pre event) {
-		int button = event.getButton();
-		boolean pressed = !(event.getAction() == 0);
-
-		if (SchematicannonClient.SCHEMATIC_HANDLER.onMouseInput(button, pressed))
-			event.setCanceled(true);
-		else if (SchematicannonClient.SCHEMATIC_AND_QUILL_HANDLER.onMouseInput(button, pressed))
-			event.setCanceled(true);
-	}
-
-
-
 }

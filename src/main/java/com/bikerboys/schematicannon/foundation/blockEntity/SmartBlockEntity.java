@@ -110,14 +110,17 @@ public abstract class SmartBlockEntity extends CachedRenderBBBlockEntity
 	@Override
 	protected final void loadAdditional(ValueInput input) {
 		super.loadAdditional(input);
+		var clientData = input.read("SchematicannonClientData", CompoundTag.CODEC);
+		if (clientData.isPresent()) {
+			read(clientData.get(), true);
+			return;
+		}
 		CompoundTag data = input.read("SchematicannonData", CompoundTag.CODEC).orElseGet(CompoundTag::new);
 		read(data, false);
 		readValue(input);
 	}
 
-	@Override
 	public void onChunkUnloaded() {
-		super.onChunkUnloaded();
 		chunkUnloaded = true;
 	}
 

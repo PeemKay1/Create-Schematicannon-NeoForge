@@ -82,16 +82,6 @@ public class SchematicEditScreen extends AbstractSimiScreen {
 			widget.setBordered(false);
 			widget.setTextColor(0xFFFFFF);
 			widget.setFocused(false);
-			widget.setFilter(s -> {
-				if (s.isEmpty() || s.equals("-"))
-					return true;
-				try {
-					Integer.parseInt(s);
-					return true;
-				} catch (NumberFormatException e) {
-					return false;
-				}
-			});
 		}
 
 		StructurePlaceSettings settings = handler.getTransformation()

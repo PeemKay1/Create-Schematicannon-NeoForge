@@ -58,8 +58,6 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.level.storage.TagValueInput;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 public class BlockHelper {
 	private static final List<IntegerProperty> COUNT_STATES = List.of(
@@ -206,22 +204,12 @@ public class BlockHelper {
 		BlockEntity blockEntity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
 
 		if (player != null) {
-			BreakBlockEvent event = new BreakBlockEvent(world, pos, state, player);
-			NeoForge.EVENT_BUS.post(event);
-			if (event.isCanceled())
-				return;
-
-			int experience = state.getExpDrop(world, pos, blockEntity, player, usedTool);
-			if (experience > 0 && world instanceof ServerLevel)
-				state.getBlock()
-					.popExperience((ServerLevel) world, pos, experience);
-
 			usedTool.mineBlock(world, state, pos, player);
 			player.awardStat(Stats.BLOCK_MINED.get(state.getBlock()));
 		}
 
 		if (world instanceof ServerLevel serverLevel && serverLevel.getGameRules()
-			.get(GameRules.BLOCK_DROPS) && !world.restoringBlockSnapshots
+			.get(GameRules.BLOCK_DROPS)
 			&& (player == null || !player.isCreative())) {
 			for (ItemStack itemStack : Block.getDrops(state, serverLevel, pos, blockEntity, player, usedTool))
 				droppedItemCallback.accept(itemStack);
@@ -267,7 +255,7 @@ public class BlockHelper {
 		BlockState old = chunksection.setBlockState(SectionPos.sectionRelative(target.getX()),
 			SectionPos.sectionRelative(target.getY()), SectionPos.sectionRelative(target.getZ()), state);
 		chunk.markUnsaved();
-		world.markAndNotifyBlock(target, chunk, old, state, 82, 512);
+		world.setBlock(target, state, 82);
 
 		world.setBlock(target, state, 82);
 		world.neighborChanged(target, world.getBlockState(target.below())

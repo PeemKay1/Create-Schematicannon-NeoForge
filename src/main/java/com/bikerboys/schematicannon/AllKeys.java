@@ -10,12 +10,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 
-@EventBusSubscriber(modid = Schematicannon.ID, value = Dist.CLIENT)
 public enum AllKeys {
 	TOOL_MENU("toolmenu", GLFW.GLFW_KEY_LEFT_ALT, "Focus Schematic Overlay"),
 	ACTIVATE_TOOL(GLFW.GLFW_KEY_LEFT_CONTROL),
@@ -50,14 +46,13 @@ public enum AllKeys {
 				consumer.accept(key.description, key.translation);
 	}
 
-	@SubscribeEvent
-	public static void register(RegisterKeyMappingsEvent event) {
+	public static void register() {
 		for (AllKeys key : values()) {
 			key.keybind = new KeyMapping(key.description, key.key, CATEGORY);
 			if (!key.modifiable)
 				continue;
 
-			event.register(key.keybind);
+			KeyMappingHelper.registerKeyMapping(key.keybind);
 		}
 	}
 
@@ -78,7 +73,7 @@ public enum AllKeys {
 	}
 
 	public boolean doesModifierAndCodeMatch(int code) {
-		return code == keybind.getKey().getValue();
+		return code == KeyMappingHelper.getBoundKeyOf(keybind).getValue();
 	}
 
 	public static boolean isKeyDown(int key) {

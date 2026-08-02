@@ -5,6 +5,7 @@ import java.util.List;
 import com.bikerboys.schematicannon.foundation.blockEntity.SmartBlockEntity;
 import com.bikerboys.schematicannon.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.bikerboys.schematicannon.foundation.item.ItemHelper;
+import com.bikerboys.schematicannon.foundation.item.ItemStackHandler;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 import com.bikerboys.schematicannon.foundation.utility.IInteractionChecker;
 
@@ -21,7 +22,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class SchematicTableBlockEntity extends SmartBlockEntity implements MenuProvider, IInteractionChecker {
 
@@ -89,12 +89,12 @@ public class SchematicTableBlockEntity extends SmartBlockEntity implements MenuP
 
 	@Override
 	protected void readValue(ValueInput input) {
-		input.readChild("Inventory", inventory);
+		inventory.load(input.childOrEmpty("Inventory"));
 	}
 
 	@Override
 	protected void writeValue(ValueOutput output) {
-		output.putChild("Inventory", inventory);
+		inventory.save(output.child("Inventory"));
 	}
 
 	@Override

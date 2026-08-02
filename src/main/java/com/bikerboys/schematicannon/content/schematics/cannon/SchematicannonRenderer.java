@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bikerboys.schematicannon.AllPartialModels;
+import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
+import net.fabricmc.fabric.api.client.model.loading.v1.FabricModelManager;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -105,12 +107,10 @@ public class SchematicannonRenderer implements BlockEntityRenderer<Schematicanno
 			BlockStateModel model = Minecraft.getInstance().getModelManager()
 				.getBlockStateModelSet().get(block.state);
 			List<BlockStateModelPart> parts = new ArrayList<>();
-			model.collectParts(BlockAndTintGetter.EMPTY, BlockPos.ZERO, block.state,
-				RandomSource.create(block.state.getSeed(launched.target)), parts);
+			model.collectParts(RandomSource.create(block.state.getSeed(launched.target)), parts);
 			int[] tints = Minecraft.getInstance().getBlockColors().getTintSources(block.state)
 				.stream().mapToInt(source -> source.color(block.state)).toArray();
-			boolean translucent = model.hasMaterialFlag(
-				BlockAndTintGetter.EMPTY, BlockPos.ZERO, block.state, 1);
+			boolean translucent = model.hasMaterialFlag(1);
 			return new FlyingRenderState(position, progress, List.copyOf(parts), tints,
 				translucent, null);
 		}
@@ -192,9 +192,9 @@ public class SchematicannonRenderer implements BlockEntityRenderer<Schematicanno
 		}
 	}
 
-	private static void submitModel(net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key,
+	private static void submitModel(ExtraModelKey<BlockStateModel> key,
 			State state, PoseStack poseStack, SubmitNodeCollector collector) {
-		BlockStateModel model = Minecraft.getInstance().getModelManager().getStandaloneModel(key);
+		BlockStateModel model = ((FabricModelManager) Minecraft.getInstance().getModelManager()).getModel(key);
 		List<BlockStateModelPart> parts = new ArrayList<>();
 		model.collectParts(RandomSource.create(0), parts);
 		List<BlockStateModelPart> immutableParts = List.copyOf(parts);

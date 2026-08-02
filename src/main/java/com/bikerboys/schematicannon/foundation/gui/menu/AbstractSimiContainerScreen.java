@@ -107,7 +107,9 @@ public abstract class AbstractSimiContainerScreen<T extends AbstractContainerMen
 
 	protected void renderForeground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
 		extractTooltip(graphics, mouseX, mouseY);
-		for (Renderable widget : renderables) {
+		for (var child : children()) {
+			if (!(child instanceof Renderable widget))
+				continue;
 			if (widget instanceof AbstractSimiWidget simiWidget && simiWidget.isMouseOver(mouseX, mouseY)) {
 				List<Component> tooltip = simiWidget.getToolTip();
 				if (tooltip.isEmpty())

@@ -21,13 +21,8 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.Container;
 import net.minecraft.world.level.block.entity.BlockEntity;
-
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
-import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class ItemHelper {
 
@@ -82,8 +77,9 @@ public class ItemHelper {
 	}
 
 	public static <T extends IBE<? extends BlockEntity>> int calcRedstoneFromBlockEntity(T ibe, Level level, BlockPos pos) {
-		var handler = level.getCapability(Capabilities.Item.BLOCK, pos, null);
-		return handler == null ? 0 : calcRedstoneFromInventory(IItemHandler.of(handler));
+		BlockEntity blockEntity = level.getBlockEntity(pos);
+		return blockEntity instanceof Container container
+			? calcRedstoneFromInventory(IItemHandler.of(container)) : 0;
 	}
 
 	public static int calcRedstoneFromInventory(@Nullable IItemHandler inv) {

@@ -10,8 +10,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.TagsUpdatedEvent;
 
 public class TagProviderImpl<K, V> implements SimpleRegistry.Provider<K, V> {
 	private final TagKey<K> tag;
@@ -33,11 +31,6 @@ public class TagProviderImpl<K, V> implements SimpleRegistry.Provider<K, V> {
 
 	@Override
 	public void onRegister(Runnable invalidate) {
-		NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> {
-			if (event.shouldUpdateStaticData()) {
-				invalidate.run();
-			}
-		});
 	}
 
 	// eye of the beholder? check the nametag, buddy

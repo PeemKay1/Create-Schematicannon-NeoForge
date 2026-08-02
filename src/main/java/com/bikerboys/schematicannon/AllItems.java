@@ -2,30 +2,28 @@ package com.bikerboys.schematicannon;
 
 import com.bikerboys.schematicannon.content.schematics.SchematicAndQuillItem;
 import com.bikerboys.schematicannon.content.schematics.SchematicItem;
-import net.minecraft.resources.Identifier;
+import com.bikerboys.schematicannon.foundation.registry.RegistryEntry;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class AllItems {
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Schematicannon.ID);
+    public static final RegistryEntry<Item> EMPTY_SCHEMATIC = item("empty_schematic", Item::new);
+    public static final RegistryEntry<SchematicAndQuillItem> SCHEMATIC_AND_QUILL =
+        item("schematic_and_quill", SchematicAndQuillItem::new);
+    public static final RegistryEntry<SchematicItem> SCHEMATIC = item("schematic", SchematicItem::new);
 
-    public static final DeferredItem<Item> EMPTY_SCHEMATIC = ITEMS.registerItem("empty_schematic", Item::new,
-            properties -> properties.stacksTo(1));
-    public static final DeferredItem<SchematicAndQuillItem> SCHEMATIC_AND_QUILL = ITEMS.registerItem(
-            "schematic_and_quill", SchematicAndQuillItem::new, properties -> properties.stacksTo(1));
-    public static final DeferredItem<SchematicItem> SCHEMATIC = ITEMS.registerItem("schematic", SchematicItem::new,
-            properties -> properties.stacksTo(1));
+    private static <T extends Item> RegistryEntry<T> item(String name,
+        java.util.function.Function<Item.Properties, T> factory) {
+        var id = Schematicannon.asResource(name);
+        var key = ResourceKey.create(Registries.ITEM, id);
+        T item = factory.apply(new Item.Properties().setId(key).stacksTo(1));
+        return new RegistryEntry<>(id, Registry.register(BuiltInRegistries.ITEM, id, item));
+    }
 
-    public static void register(IEventBus eventBus) {
-        ITEMS.addAlias(Identifier.fromNamespaceAndPath(Schematicannon.ID, "empty_blueprint"),
-                EMPTY_SCHEMATIC.getId());
-        ITEMS.addAlias(Identifier.fromNamespaceAndPath(Schematicannon.ID, "blueprint_and_quill"),
-                SCHEMATIC_AND_QUILL.getId());
-        ITEMS.addAlias(Identifier.fromNamespaceAndPath(Schematicannon.ID, "blueprint"),
-                SCHEMATIC.getId());
-        ITEMS.register(eventBus);
+    public static void register() {
     }
 
     private AllItems() {

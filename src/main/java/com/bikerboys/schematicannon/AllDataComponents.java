@@ -3,21 +3,18 @@ package com.bikerboys.schematicannon;
 import com.mojang.serialization.Codec;
 import java.util.function.UnaryOperator;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 /** Persistent item state owned by Schematicannon, independent from Create internals. */
 public final class AllDataComponents {
-    private static final DeferredRegister.DataComponents COMPONENTS =
-            DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, Schematicannon.ID);
-
     public static final DataComponentType<Boolean> SCHEMATIC_DEPLOYED = register("schematic_deployed",
             builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
     public static final DataComponentType<String> SCHEMATIC_OWNER = register("schematic_owner",
@@ -43,12 +40,10 @@ public final class AllDataComponents {
 
     private static <T> DataComponentType<T> register(String name, UnaryOperator<DataComponentType.Builder<T>> factory) {
         DataComponentType<T> type = factory.apply(DataComponentType.builder()).build();
-        COMPONENTS.register(name, () -> type);
-        return type;
+        return Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE, Schematicannon.asResource(name), type);
     }
 
-    public static void register(IEventBus eventBus) {
-        COMPONENTS.register(eventBus);
+    public static void register() {
     }
 
     private AllDataComponents() {

@@ -3,6 +3,7 @@ package com.bikerboys.schematicannon.content.schematics.table;
 import com.bikerboys.schematicannon.AllItems;
 import com.bikerboys.schematicannon.AllMenuTypes;
 import com.bikerboys.schematicannon.foundation.gui.menu.MenuBase;
+import com.bikerboys.schematicannon.foundation.item.SlotItemHandler;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -13,7 +14,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.items.SlotItemHandler;
+import net.minecraft.world.phys.BlockHitResult;
 
 public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 
@@ -26,6 +27,18 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 
 	public SchematicTableMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
 		this(AllMenuTypes.SCHEMATIC_TABLE.get(), id, inv, extraData);
+	}
+
+	public SchematicTableMenu(int id, Inventory inv) {
+		this(AllMenuTypes.SCHEMATIC_TABLE.get(), id, inv, findClientBlockEntity());
+	}
+
+	private static SchematicTableBlockEntity findClientBlockEntity() {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.level != null && minecraft.hitResult instanceof BlockHitResult hit
+			&& minecraft.level.getBlockEntity(hit.getBlockPos()) instanceof SchematicTableBlockEntity table)
+			return table;
+		throw new IllegalStateException("Schematic table menu opened without a targeted table");
 	}
 
 	public SchematicTableMenu(MenuType<?> type, int id, Inventory inv, SchematicTableBlockEntity be) {

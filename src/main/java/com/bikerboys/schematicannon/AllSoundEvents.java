@@ -13,8 +13,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.core.Vec3i;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.DataProvider;
@@ -27,7 +28,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.RegisterEvent;
 
 //@EventBusSubscriber(bus = Bus.FORGE)
 public class AllSoundEvents {
@@ -60,21 +60,15 @@ public class AllSoundEvents {
 			entry.prepare();
 	}
 
-	public static void register(RegisterEvent event) {
-		event.register(Registries.SOUND_EVENT, helper -> {
-			for (SoundEntry entry : ALL.values())
-				entry.register(helper);
-		});
+	public static void register() {
+		for (SoundEntry entry : ALL.values())
+			entry.register();
 	}
 
 	public static void provideLang(BiConsumer<String, String> consumer) {
 		for (SoundEntry entry : ALL.values())
 			if (entry.hasSubtitle())
 				consumer.accept(entry.getSubtitleKey(), entry.getSubtitle());
-	}
-
-	public static SoundEntryProvider provider(DataGenerator generator) {
-		return new SoundEntryProvider(generator);
 	}
 
 	public static void playItemPickup(Player player) {
@@ -92,39 +86,6 @@ public class AllSoundEvents {
 //			event.setResultSound();
 //
 //	}
-
-	public static class SoundEntryProvider implements DataProvider {
-
-		private final PackOutput output;
-
-		public SoundEntryProvider(DataGenerator generator) {
-			output = generator.getPackOutput();
-		}
-
-		@Override
-		public CompletableFuture<?> run(CachedOutput cache) {
-			return generate(output.getOutputFolder(), cache);
-		}
-
-		@Override
-		public String getName() {
-			return "Schematicannon Custom Sounds";
-		}
-
-		public CompletableFuture<?> generate(Path path, CachedOutput cache) {
-			path = path.resolve("assets/schematicannon");
-			JsonObject json = new JsonObject();
-			ALL.entrySet()
-				.stream()
-				.sorted(Map.Entry.comparingByKey())
-				.forEach(entry -> {
-					entry.getValue()
-						.write(json);
-				});
-			return DataProvider.saveStable(cache, json, path.resolve("sounds.json"));
-		}
-
-	}
 
 	public record ConfiguredSoundEvent(Supplier<SoundEvent> event, float volume, float pitch) {
 	}
@@ -220,7 +181,7 @@ public class AllSoundEvents {
 
 		public abstract void prepare();
 
-		public abstract void register(RegisterEvent.RegisterHelper<SoundEvent> registry);
+		public abstract void register();
 
 		public abstract void write(JsonObject json);
 
@@ -309,10 +270,10 @@ public class AllSoundEvents {
 		}
 
 		@Override
-		public void register(RegisterEvent.RegisterHelper<SoundEvent> helper) {
+		public void register() {
 			for (CompiledSoundEvent compiledEvent : compiledEvents) {
 				SoundEvent event = compiledEvent.event();
-				helper.register(event.location(), event);
+				Registry.register(BuiltInRegistries.SOUND_EVENT, event.location(), event);
 			}
 		}
 
@@ -387,8 +348,8 @@ public class AllSoundEvents {
 		}
 
 		@Override
-		public void register(RegisterEvent.RegisterHelper<SoundEvent> helper) {
-			helper.register(event.location(), event);
+		public void register() {
+			Registry.register(BuiltInRegistries.SOUND_EVENT, event.location(), event);
 		}
 
 		@Override

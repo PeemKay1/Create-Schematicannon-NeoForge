@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.142'
+    id 'net.fabricmc.fabric-loom' version '1.17.17'
     id 'idea'
 }
 
@@ -19,7 +19,7 @@ sourceSets.main.resources {
 }
 
 sourceSets.main.java {
-    // Legacy Registrate/datagen helpers are replaced by native NeoForge registries.
+    // Legacy Registrate/datagen helpers are replaced by native Minecraft registries.
     exclude 'com/bikerboys/schematicannon/foundation/data/**'
     exclude 'com/bikerboys/schematicannon/api/registry/registrate/**'
     exclude 'com/bikerboys/schematicannon/impl/registrate/**'
@@ -31,48 +31,41 @@ sourceSets.main.java {
     exclude 'com/bikerboys/schematicannon/foundation/item/render/CustomRenderedItemModelRenderer.java'
     exclude 'com/bikerboys/schematicannon/foundation/item/render/CustomRenderedItems.java'
     exclude 'com/bikerboys/schematicannon/foundation/item/render/SimpleCustomRenderer.java'
+    exclude 'com/bikerboys/schematicannon/foundation/mixin/accessor/FluidInteractionRegistryAccessor.java'
+    exclude 'com/bikerboys/schematicannon/foundation/item/ItemDescription.java'
+    exclude 'com/bikerboys/schematicannon/foundation/item/TooltipModifier.java'
+    exclude 'com/bikerboys/schematicannon/foundation/networking/ISyncPersistentData.java'
+    exclude 'com/bikerboys/schematicannon/foundation/utility/ServerSpeedProvider.java'
+    exclude 'com/bikerboys/schematicannon/foundation/item/CombustibleItem.java'
 }
 
 repositories {
     mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
     maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
 }
 
-neoForge {
-    enable {
-        version = neo_version
-        disableRecompilation = true
-    }
-    validateAccessTransformers = false
-    runs {
-        client {
-            client()
-        }
-        server { server(); programArgument '--nogui' }
-        data {
-            clientData()
-            programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').absolutePath, '--existing', file('src/main/resources/').absolutePath
-        }
-        configureEach {
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            logLevel = org.slf4j.event.Level.INFO
-        }
-    }
-    mods { "${mod_id}" { sourceSet sourceSets.main } }
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
 
-configurations { runtimeClasspath.extendsFrom localRuntime }
-
-def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
-    def replaceProperties = [minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range, neo_version: neo_version, mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version, mod_author: mod_author, mod_description: mod_description]
-    inputs.properties replaceProperties
-    expand replaceProperties
-    from 'src/main/templates'
-    into 'build/generated/sources/modMetadata'
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'minecraft_version', minecraft_version
+    inputs.property 'fabric_loader_version', fabric_loader_version
+    inputs.property 'fabric_api_version', fabric_api_version
+    filesMatching('fabric.mod.json') {
+        expand(
+            version: project.version,
+            minecraft_version: minecraft_version,
+            fabric_loader_version: fabric_loader_version,
+            fabric_api_version: fabric_api_version
+        )
+    }
 }
-
-sourceSets.main.resources.srcDir generateModMetadata
-neoForge.ideSyncTask generateModMetadata
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
@@ -95,7 +88,9 @@ tasks.register('smokeTestLitematics', JavaExec) {
 def licenseArchiveName = base.archivesName.get()
 jar {
     exclude 'com/bikerboys/schematicannon/content/schematics/LitematicImporterSmokeTest.class'
+    exclude 'META-INF/mods.toml'
+    exclude 'META-INF/neoforge.mods.toml'
+    exclude 'META-INF/accesstransformer.cfg'
     from('LICENSE') { rename { "${it}_${licenseArchiveName}" } }
     from('THIRD_PARTY_NOTICES.md') { into 'META-INF' }
-    manifest.attributes('MixinConfigs': 'schematicannon.mixins.json')
 }

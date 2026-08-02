@@ -2,23 +2,25 @@ package com.bikerboys.schematicannon;
 
 import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonMenu;
 import com.bikerboys.schematicannon.content.schematics.table.SchematicTableMenu;
-import net.minecraft.core.registries.Registries;
+import com.bikerboys.schematicannon.foundation.registry.RegistryEntry;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class AllMenuTypes {
-    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, Schematicannon.ID);
+    public static final RegistryEntry<MenuType<SchematicTableMenu>> SCHEMATIC_TABLE =
+        register("schematic_table", new MenuType<>(SchematicTableMenu::new, FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryEntry<MenuType<SchematicannonMenu>> SCHEMATICANNON =
+        register("schematicannon", new MenuType<>(SchematicannonMenu::new, FeatureFlags.DEFAULT_FLAGS));
 
-    public static final DeferredHolder<MenuType<?>, MenuType<SchematicTableMenu>> SCHEMATIC_TABLE = MENUS.register(
-            "schematic_table", () -> IMenuTypeExtension.create(SchematicTableMenu::new));
-    public static final DeferredHolder<MenuType<?>, MenuType<SchematicannonMenu>> SCHEMATICANNON = MENUS.register(
-            "schematicannon", () -> IMenuTypeExtension.create(SchematicannonMenu::new));
+    private static <T extends net.minecraft.world.inventory.AbstractContainerMenu>
+    RegistryEntry<MenuType<T>> register(String name, MenuType<T> type) {
+        var id = Schematicannon.asResource(name);
+        return new RegistryEntry<>(id, Registry.register(BuiltInRegistries.MENU, id, type));
+    }
 
-    public static void register(IEventBus eventBus) {
-        MENUS.register(eventBus);
+    public static void register() {
     }
 
     private AllMenuTypes() {

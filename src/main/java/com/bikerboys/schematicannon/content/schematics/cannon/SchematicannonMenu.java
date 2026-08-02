@@ -2,6 +2,7 @@ package com.bikerboys.schematicannon.content.schematics.cannon;
 
 import com.bikerboys.schematicannon.AllMenuTypes;
 import com.bikerboys.schematicannon.foundation.gui.menu.MenuBase;
+import com.bikerboys.schematicannon.foundation.item.SlotItemHandler;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -12,7 +13,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.items.SlotItemHandler;
+import net.minecraft.world.phys.BlockHitResult;
 
 public class SchematicannonMenu extends MenuBase<SchematicannonBlockEntity> {
 
@@ -22,6 +23,18 @@ public class SchematicannonMenu extends MenuBase<SchematicannonBlockEntity> {
 
 	public SchematicannonMenu(int id, Inventory inv, FriendlyByteBuf buffer) {
 		this(AllMenuTypes.SCHEMATICANNON.get(), id, inv, buffer);
+	}
+
+	public SchematicannonMenu(int id, Inventory inv) {
+		this(AllMenuTypes.SCHEMATICANNON.get(), id, inv, findClientBlockEntity());
+	}
+
+	private static SchematicannonBlockEntity findClientBlockEntity() {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.level != null && minecraft.hitResult instanceof BlockHitResult hit
+			&& minecraft.level.getBlockEntity(hit.getBlockPos()) instanceof SchematicannonBlockEntity cannon)
+			return cannon;
+		throw new IllegalStateException("Schematicannon menu opened without a targeted cannon");
 	}
 
 	public SchematicannonMenu(MenuType<?> type, int id, Inventory inv, SchematicannonBlockEntity be) {

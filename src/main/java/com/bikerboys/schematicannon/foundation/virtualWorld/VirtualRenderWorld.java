@@ -27,6 +27,7 @@ import net.minecraft.world.attribute.EnvironmentAttributeSystem;
 import net.minecraft.world.clock.ClockManager;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.item.alchemy.PotionBrewing;
@@ -60,7 +61,6 @@ import net.minecraft.world.level.storage.WritableLevelData;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.ticks.LevelTickAccess;
-import net.neoforged.neoforge.entity.PartEntity;
 
 public class VirtualRenderWorld extends Level {
 	protected final Level level;
@@ -375,7 +375,6 @@ public class VirtualRenderWorld extends Level {
 		return true;
 	}
 
-	@Override
 	public boolean isAreaLoaded(BlockPos center, int range) {
 		return true;
 	}
@@ -457,7 +456,7 @@ public class VirtualRenderWorld extends Level {
 	}
 
 	@Override
-	public Collection<? extends PartEntity<?>> dragonParts() {
+	public Collection<EnderDragonPart> dragonParts() {
 		return Collections.emptyList();
 	}
 

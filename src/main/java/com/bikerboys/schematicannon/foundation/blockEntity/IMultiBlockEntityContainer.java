@@ -7,8 +7,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.IFluidTank;
 
 public interface IMultiBlockEntityContainer {
 
@@ -61,16 +59,4 @@ public interface IMultiBlockEntityContainer {
 		default boolean hasInventory() { return false; }
 	}
 
-	interface Fluid extends IMultiBlockEntityContainer {
-		// done here rather than through the Capability to allow greater flexibility
-		default boolean hasTank() { return false; }
-
-		default int getTankSize(int tank) {	return 0; }
-
-		default void setTankSize(int tank, int blocks) {}
-
-		default IFluidTank getTank(int tank) { return null; }
-
-		default FluidStack getFluid(int tank) {	return FluidStack.EMPTY; }
-	}
 }

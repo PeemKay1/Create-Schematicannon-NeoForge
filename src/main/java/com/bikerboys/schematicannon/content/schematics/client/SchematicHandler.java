@@ -53,9 +53,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 
 import net.minecraft.client.DeltaTracker;
-import net.neoforged.neoforge.client.gui.GuiLayer;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
-public class SchematicHandler implements GuiLayer {
+public class SchematicHandler implements HudElement {
 
 	private String displayedSchematic;
 	private SchematicTransformation transformation;
@@ -321,7 +321,7 @@ public class SchematicHandler implements GuiLayer {
 	}
 
 	@Override
-	public void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
+	public void extractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
 		float partialTicks = deltaTracker.getGameTimeDeltaPartialTick(false);
 		int width = graphics.guiWidth();
 		int height = graphics.guiHeight();

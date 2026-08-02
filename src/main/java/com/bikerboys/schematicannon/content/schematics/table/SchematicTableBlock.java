@@ -42,7 +42,6 @@ public class SchematicTableBlock extends HorizontalDirectionalBlock implements I
 		super.createBlockStateDefinition(builder);
 	}
 
-	@Override
 	public PushReaction getPistonPushReaction(BlockState state) {
 		return PushReaction.BLOCK;
 	}
@@ -69,7 +68,7 @@ public class SchematicTableBlock extends HorizontalDirectionalBlock implements I
 		if (worldIn.isClientSide())
 			return InteractionResult.SUCCESS;
 		if (player instanceof ServerPlayer serverPlayer)
-			withBlockEntityDo(worldIn, pos, be -> serverPlayer.openMenu(be, be::sendToMenu));
+			withBlockEntityDo(worldIn, pos, serverPlayer::openMenu);
 		return InteractionResult.SUCCESS;
 	}
 

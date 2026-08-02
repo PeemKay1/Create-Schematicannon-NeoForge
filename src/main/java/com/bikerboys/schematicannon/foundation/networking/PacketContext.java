@@ -1,23 +1,25 @@
 package com.bikerboys.schematicannon.foundation.networking;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-/** Small compatibility surface that keeps packet logic independent of NeoForge internals. */
+/** Small compatibility surface that keeps packet logic independent of Fabric internals. */
 public final class PacketContext {
-    private final IPayloadContext delegate;
+    private final ServerPlayer sender;
+    private final Executor executor;
 
-    public PacketContext(IPayloadContext delegate) {
-        this.delegate = delegate;
+    public PacketContext(ServerPlayer sender, Executor executor) {
+        this.sender = sender;
+        this.executor = executor;
     }
 
     public CompletableFuture<Void> enqueueWork(Runnable work) {
-        return delegate.enqueueWork(work);
+        return CompletableFuture.runAsync(work, executor);
     }
 
     public ServerPlayer getSender() {
-        return delegate.player() instanceof ServerPlayer player ? player : null;
+        return sender;
     }
 }

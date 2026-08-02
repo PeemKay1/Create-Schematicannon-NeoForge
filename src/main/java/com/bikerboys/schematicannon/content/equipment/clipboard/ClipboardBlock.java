@@ -37,7 +37,6 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.common.util.FakePlayer;
 
 public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 	implements IBE<ClipboardBlockEntity>, ProperWaterloggedBlock {
@@ -124,8 +123,6 @@ public class ClipboardBlock extends FaceAttachedHorizontalDirectionalBlock
 	}
 
 	private void breakAndCollect(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer) {
-		if (pPlayer instanceof FakePlayer)
-			return;
 		if (pLevel.isClientSide())
 			return;
 		ItemStack cloneItemStack = getClipboardStack(pLevel, pPos);

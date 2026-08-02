@@ -8,21 +8,18 @@ import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonRend
 import com.bikerboys.schematicannon.content.schematics.cannon.SchematicannonScreen;
 import com.bikerboys.schematicannon.content.schematics.table.SchematicTableScreen;
 import com.bikerboys.schematicannon.foundation.ClientResourceReloadListener;
+import com.bikerboys.schematicannon.foundation.events.ClientEvents;
+import com.bikerboys.schematicannon.foundation.events.InputEvents;
 
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
-import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.server.packs.PackType;
 
-@Mod(value = Schematicannon.ID, dist = Dist.CLIENT)
-public class SchematicannonClient {
+public class SchematicannonClient implements ClientModInitializer {
 
 	public static final ClientSchematicLoader SCHEMATIC_SENDER = new ClientSchematicLoader();
 	public static final SchematicHandler SCHEMATIC_HANDLER = new SchematicHandler();
@@ -32,42 +29,20 @@ public class SchematicannonClient {
 
 	public static final ClientResourceReloadListener RESOURCE_RELOAD_LISTENER = new ClientResourceReloadListener();
 
-	public SchematicannonClient(IEventBus modEventBus, ModContainer container) {
-		onCtorClient(modEventBus, NeoForge.EVENT_BUS);
-	}
-
-	public static void onCtorClient(IEventBus modEventBus, IEventBus forgeEventBus) {
-		modEventBus.addListener(SchematicannonClient::clientInit);
-		modEventBus.addListener(AllParticleTypes::registerFactories);
-		modEventBus.addListener(AllPackets::registerClient);
-		modEventBus.addListener(AllPartialModels::register);
-		modEventBus.addListener(SchematicannonClient::registerRenderers);
-		modEventBus.addListener(SchematicannonClient::registerReloadListeners);
-		modEventBus.addListener(SchematicannonClient::registerGuiLayers);
-		modEventBus.addListener(SchematicannonClient::registerMenuScreens);
-
-	}
-
-	public static void clientInit(final FMLClientSetupEvent event) {
-
-
-	}
-
-	private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-		event.registerBlockEntityRenderer(AllBlockEntityTypes.SCHEMATICANNON.get(), SchematicannonRenderer::new);
-	}
-
-	private static void registerReloadListeners(AddClientReloadListenersEvent event) {
-		event.addListener(Schematicannon.asResource("client_resources"), RESOURCE_RELOAD_LISTENER);
-	}
-
-	private static void registerGuiLayers(RegisterGuiLayersEvent event) {
-		event.registerAbove(VanillaGuiLayers.HOTBAR, Schematicannon.asResource("schematic"), SCHEMATIC_HANDLER);
-	}
-
-	private static void registerMenuScreens(RegisterMenuScreensEvent event) {
-		event.register(AllMenuTypes.SCHEMATIC_TABLE.get(), SchematicTableScreen::new);
-		event.register(AllMenuTypes.SCHEMATICANNON.get(), SchematicannonScreen::new);
+	@Override
+	public void onInitializeClient() {
+		AllKeys.register();
+		ClientEvents.register();
+		InputEvents.register();
+		AllParticleTypes.registerFactories();
+		AllPartialModels.register();
+		AllPackets.registerClient();
+		BlockEntityRenderers.register(AllBlockEntityTypes.SCHEMATICANNON.get(), SchematicannonRenderer::new);
+		ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(RESOURCE_RELOAD_LISTENER);
+		HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR,
+			Schematicannon.asResource("schematic"), SCHEMATIC_HANDLER);
+		MenuScreens.register(AllMenuTypes.SCHEMATIC_TABLE.get(), SchematicTableScreen::new);
+		MenuScreens.register(AllMenuTypes.SCHEMATICANNON.get(), SchematicannonScreen::new);
 	}
 
 

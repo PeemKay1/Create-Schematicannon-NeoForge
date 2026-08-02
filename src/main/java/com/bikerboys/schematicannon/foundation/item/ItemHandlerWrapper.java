@@ -1,8 +1,6 @@
 package com.bikerboys.schematicannon.foundation.item;
 
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
-
 public class ItemHandlerWrapper implements IItemHandlerModifiable {
 
 	private final IItemHandlerModifiable wrapped;

@@ -124,8 +124,7 @@ public class SchematicRenderer {
 					.getBlockStateModelSet()
 					.get(state);
 				List<BlockStateModelPart> parts = new ArrayList<>();
-				model.collectParts(BlockAndTintGetter.EMPTY, BlockPos.ZERO, state,
-					RandomSource.create(state.getSeed(pos)), parts);
+				model.collectParts(RandomSource.create(state.getSeed(pos)), parts);
 				if (parts.isEmpty())
 					continue;
 
@@ -135,8 +134,7 @@ public class SchematicRenderer {
 					.stream()
 					.mapToInt(source -> source.color(state))
 					.toArray();
-				boolean hasTranslucency =
-					model.hasMaterialFlag(BlockAndTintGetter.EMPTY, BlockPos.ZERO, state, 1);
+				boolean hasTranslucency = model.hasMaterialFlag(1);
 				blocks.add(new PreviewBlock(pos.immutable(), List.copyOf(parts), tints, hasTranslucency));
 			}
 		} finally {

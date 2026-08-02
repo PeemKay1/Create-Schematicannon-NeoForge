@@ -1,24 +1,25 @@
 package com.bikerboys.schematicannon;
 
+import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
+import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
+import net.fabricmc.fabric.api.client.model.loading.v1.SimpleUnbakedExtraModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
-import net.minecraft.client.resources.model.ModelDebugName;
-import net.neoforged.neoforge.client.event.ModelEvent;
-import net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel;
-import net.neoforged.neoforge.client.model.standalone.StandaloneModelKey;
 
 public final class AllPartialModels {
-	public static final StandaloneModelKey<BlockStateModel> SCHEMATICANNON_CONNECTOR = key("schematicannon_connector");
-	public static final StandaloneModelKey<BlockStateModel> SCHEMATICANNON_PIPE = key("schematicannon_pipe");
+	public static final ExtraModelKey<BlockStateModel> SCHEMATICANNON_CONNECTOR = key("schematicannon_connector");
+	public static final ExtraModelKey<BlockStateModel> SCHEMATICANNON_PIPE = key("schematicannon_pipe");
 
-	private static StandaloneModelKey<BlockStateModel> key(String name) {
-		return new StandaloneModelKey<>((ModelDebugName) () -> Schematicannon.ID + ":" + name);
+	private static ExtraModelKey<BlockStateModel> key(String name) {
+		return ExtraModelKey.create(() -> Schematicannon.ID + ":" + name);
 	}
 
-	public static void register(ModelEvent.RegisterStandalone event) {
-		event.register(SCHEMATICANNON_CONNECTOR, SimpleUnbakedStandaloneModel.blockStateModel(
-			Schematicannon.asResource("block/schematicannon/connector")));
-		event.register(SCHEMATICANNON_PIPE, SimpleUnbakedStandaloneModel.blockStateModel(
-			Schematicannon.asResource("block/schematicannon/pipe")));
+	public static void register() {
+		ModelLoadingPlugin.register(context -> {
+			context.addModel(SCHEMATICANNON_CONNECTOR, SimpleUnbakedExtraModel.blockStateModel(
+				Schematicannon.asResource("block/schematicannon/connector")));
+			context.addModel(SCHEMATICANNON_PIPE, SimpleUnbakedExtraModel.blockStateModel(
+				Schematicannon.asResource("block/schematicannon/pipe")));
+		});
 	}
 
 	private AllPartialModels() {}

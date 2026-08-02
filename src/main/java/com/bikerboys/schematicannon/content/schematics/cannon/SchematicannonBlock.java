@@ -58,7 +58,7 @@ public class SchematicannonBlock extends Block implements IBE<SchematicannonBloc
 		if (worldIn.isClientSide())
 			return InteractionResult.SUCCESS;
 		if (player instanceof ServerPlayer serverPlayer)
-			withBlockEntityDo(worldIn, pos, be -> serverPlayer.openMenu(be, be::sendToMenu));
+			withBlockEntityDo(worldIn, pos, serverPlayer::openMenu);
 		return InteractionResult.SUCCESS;
 	}
 

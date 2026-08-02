@@ -62,16 +62,7 @@ public class ModularGuiLineBuilder {
 
 	public ModularGuiLineBuilder addIntegerTextInput(int x, int width, BiConsumer<EditBox, TooltipArea> inputTransform,
 													 String dataKey) {
-		return addTextInput(x, width, inputTransform.andThen((editBox, $) -> editBox.setFilter(s -> {
-			if (s.isEmpty())
-				return true;
-			try {
-				Integer.parseInt(s);
-				return true;
-			} catch (NumberFormatException e) {
-				return false;
-			}
-		})), dataKey);
+		return addTextInput(x, width, inputTransform, dataKey);
 	}
 
 	public ModularGuiLineBuilder addTextInput(int x, int width, BiConsumer<EditBox, TooltipArea> inputTransform,

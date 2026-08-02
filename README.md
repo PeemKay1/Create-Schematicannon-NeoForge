@@ -2,11 +2,11 @@
 
 # Schematicannon for Minecraft 26.2
 
-An unofficial, standalone NeoForge port of the schematic tools and Schematicannon gameplay originally found in Create.
+An unofficial, standalone Fabric port of the schematic tools and Schematicannon gameplay originally found in Create.
 
 This mod does not require Create at runtime. It uses its own mod id, registries, networking, saved data and menus while preserving the familiar workflow: capture a build, prepare the schematic, position its preview and let the cannon construct it from supplied materials.
 
-> **Status:** active development. The port is playable, but Minecraft 26.2 and its NeoForge toolchain are still evolving. Back up important worlds before testing.
+> **Status:** active development. Back up important worlds before testing.
 
 ## Features
 
@@ -22,8 +22,9 @@ This mod does not require Create at runtime. It uses its own mod id, registries,
 ## Requirements
 
 - Minecraft `26.2`
-- NeoForge `26.2.0.35-beta` or newer compatible build
-- Java version required by Minecraft 26.2
+- Fabric Loader `0.19.3` or newer compatible build
+- Fabric API `0.156.0+26.2` or newer compatible build
+- Java 25
 
 Create is not a runtime dependency.
 
@@ -55,7 +56,7 @@ The original schematic mechanics and portions of the implementation were derived
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before redistributing this project or its compiled artifacts.
 
-The standalone Schematicannon project is based on [michiel1106/Create-schematicannon](https://github.com/michiel1106/Create-schematicannon). This Minecraft 26.2 NeoForge port is maintained by PeemKay1 and preserves the original Git history.
+The standalone Schematicannon project is based on [michiel1106/Create-schematicannon](https://github.com/michiel1106/Create-schematicannon). This Minecraft 26.2 Fabric port is maintained by PeemKay1 and preserves the original Git history.
 
 ## License
 

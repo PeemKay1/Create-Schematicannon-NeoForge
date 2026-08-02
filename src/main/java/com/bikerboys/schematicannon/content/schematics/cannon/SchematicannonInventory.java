@@ -5,7 +5,7 @@ import com.bikerboys.schematicannon.AllItems;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.items.ItemStackHandler;
+import com.bikerboys.schematicannon.foundation.item.ItemStackHandler;
 
 public class SchematicannonInventory extends ItemStackHandler {
 	private final SchematicannonBlockEntity blockEntity;

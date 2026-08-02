@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 
 import com.bikerboys.schematicannon.content.schematics.ServerSchematicLoader;
 import com.bikerboys.schematicannon.foundation.CreateNBTProcessors;
+import com.bikerboys.schematicannon.foundation.events.CommonEvents;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mojang.logging.LogUtils;
@@ -15,14 +16,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.Level;
 
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.fabricmc.api.ModInitializer;
 
-@Mod(Schematicannon.ID)
-public class Schematicannon {
+public class Schematicannon implements ModInitializer {
 	public static final String ID = "schematicannon";
 	public static final String NAME = "Schematicannon";
 
@@ -44,38 +40,25 @@ public class Schematicannon {
 	public static final ServerSchematicLoader SCHEMATIC_RECEIVER = new ServerSchematicLoader();
 
 
-	public Schematicannon(IEventBus modEventBus, ModContainer modContainer) {
-		onCtor(modEventBus);
-	}
-
-	public static void onCtor(IEventBus modEventBus) {
+	@Override
+	public void onInitialize() {
 		LOGGER.info("{} {} initializing! Commit hash: {}", NAME, SchematicannonBuildInfo.VERSION, SchematicannonBuildInfo.GIT_COMMIT);
 
-
-
 		AllSoundEvents.prepare();
-		AllBlocks.register(modEventBus);
-		AllItems.register(modEventBus);
-		AllCreativeModeTabs.register(modEventBus);
-		AllDataComponents.register(modEventBus);
-		AllMenuTypes.register(modEventBus);
-		AllBlockEntityTypes.register(modEventBus);
-		AllParticleTypes.register(modEventBus);
-		AllStructureProcessorTypes.register(modEventBus);
-		modEventBus.addListener(AllPackets::register);
-
+		AllBlocks.register();
+		AllItems.register();
+		AllCreativeModeTabs.register();
+		AllDataComponents.register();
+		AllMenuTypes.register();
+		AllBlockEntityTypes.register();
+		AllParticleTypes.register();
+		AllStructureProcessorTypes.register();
+		AllSoundEvents.register();
+		AllPackets.register();
 
 		AllSchematicStateFilters.registerDefaults();
-
-		modEventBus.addListener(Schematicannon::init);
-		modEventBus.addListener(AllSoundEvents::register);
-
-	}
-
-	public static void init(final FMLCommonSetupEvent event) {
 		CreateNBTProcessors.register();
-
-
+		CommonEvents.register();
 	}
 
 

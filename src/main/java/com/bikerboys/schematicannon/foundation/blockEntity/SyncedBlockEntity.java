@@ -8,7 +8,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
@@ -35,16 +34,6 @@ public abstract class SyncedBlockEntity extends BlockEntity {
 	@Override
 	public ClientboundBlockEntityDataPacket getUpdatePacket() {
 		return ClientboundBlockEntityDataPacket.create(this);
-	}
-
-	@Override
-	public void handleUpdateTag(ValueInput input) {
-		readClient(input.read("SchematicannonClientData", CompoundTag.CODEC).orElseGet(CompoundTag::new));
-	}
-
-	@Override
-	public void onDataPacket(Connection connection, ValueInput input) {
-		handleUpdateTag(input);
 	}
 
 	// Special handling for client update packets

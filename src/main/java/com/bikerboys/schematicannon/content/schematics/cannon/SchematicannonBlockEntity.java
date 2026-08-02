@@ -19,6 +19,11 @@ import com.bikerboys.schematicannon.foundation.blockEntity.SmartBlockEntity;
 import com.bikerboys.schematicannon.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.bikerboys.schematicannon.foundation.item.ItemHelper;
 import com.bikerboys.schematicannon.foundation.item.ItemHelper.ExtractionCountMode;
+import com.bikerboys.schematicannon.foundation.item.IItemHandler;
+import com.bikerboys.schematicannon.foundation.item.ItemHandlerHelper;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import com.bikerboys.schematicannon.foundation.utility.BlockHelper;
 import com.bikerboys.schematicannon.foundation.utility.CreateLang;
 
@@ -30,6 +35,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -52,11 +58,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
 
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuProvider {
 
@@ -127,10 +128,10 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 
 
 
-			ResourceHandler<ItemResource> capability = level.getCapability(Capabilities.Item.BLOCK,
+			Storage<ItemVariant> storage = ItemStorage.SIDED.find(level,
 				worldPosition.relative(facing), facing.getOpposite());
-			if (capability != null)
-				attachedInventories.add(IItemHandler.of(capability));
+			if (storage != null)
+				attachedInventories.add(IItemHandler.of(storage));
 		}
 	}
 
@@ -267,7 +268,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 
 	@Override
 	protected void readValue(ValueInput input) {
-		input.readChild("Inventory", inventory);
+		inventory.load(input.childOrEmpty("Inventory"));
 		missingItem = input.read("MissingItem", ItemStack.CODEC).orElse(null);
 		input.childrenList("FlyingBlocks")
 			.ifPresent(blocks -> readFlyingBlocks(blocks.stream()
@@ -281,7 +282,7 @@ public class SchematicannonBlockEntity extends SmartBlockEntity implements MenuP
 
 	@Override
 	protected void writeValue(ValueOutput output) {
-		output.putChild("Inventory", inventory);
+		inventory.save(output.child("Inventory"));
 		if (missingItem != null)
 			output.store("MissingItem", ItemStack.CODEC, missingItem);
 		else

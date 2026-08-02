@@ -38,17 +38,6 @@ public class SchematicProcessor implements StructureProcessor {
 		return info;
 	}
 
-	@Nullable
-	@Override
-	public StructureTemplate.StructureEntityInfo processEntity(LevelReader world, BlockPos pos, StructureTemplate.StructureEntityInfo rawInfo,
-			StructureTemplate.StructureEntityInfo info, StructurePlaceSettings settings, StructureTemplate template) {
-		return EntityType.by(TagValueInput.create(
-				ProblemReporter.DISCARDING, world.registryAccess(), info.nbt))
-			.filter(type -> !type.onlyOpCanSetNbt())
-			.map(type -> info)
-			.orElse(null);
-	}
-
 	@Override
 	public MapCodec<? extends StructureProcessor> codec() {
 		return CODEC;
