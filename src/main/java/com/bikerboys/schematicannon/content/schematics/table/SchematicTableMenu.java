@@ -54,16 +54,23 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 		return inputSlot.hasItem() && !outputSlot.hasItem();
 	}
 
+	public boolean placeCarriedEmptySchematic() {
+		ItemStack carried = getCarried();
+		if (inputSlot.hasItem() || !carried.is(AllItems.EMPTY_SCHEMATIC.get()))
+			return false;
+		inputSlot.setByPlayer(carried.copyWithCount(1));
+		ItemStack remainder = carried.copy();
+		remainder.shrink(1);
+		setCarried(remainder);
+		broadcastChanges();
+		return true;
+	}
+
 	@Override
 	public void clicked(int slotId, int button, ContainerInput input, Player player) {
 		if (slotId == inputSlot.index && input == ContainerInput.PICKUP && !inputSlot.hasItem()
-			&& getCarried().is(AllItems.EMPTY_SCHEMATIC.get())) {
-			inputSlot.setByPlayer(getCarried().copyWithCount(1));
-			ItemStack remainder = getCarried().copy();
-			remainder.shrink(1);
-			setCarried(remainder);
+			&& placeCarriedEmptySchematic())
 			return;
-		}
 		super.clicked(slotId, button, input, player);
 	}
 

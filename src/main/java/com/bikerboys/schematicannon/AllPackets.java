@@ -11,6 +11,7 @@ import com.bikerboys.schematicannon.content.schematics.packet.InstantSchematicPa
 import com.bikerboys.schematicannon.content.schematics.packet.SchematicPlacePacket;
 import com.bikerboys.schematicannon.content.schematics.packet.SchematicSyncPacket;
 import com.bikerboys.schematicannon.content.schematics.packet.SchematicUploadPacket;
+import com.bikerboys.schematicannon.content.schematics.table.PlaceSchematicTableItemPacket;
 import com.bikerboys.schematicannon.foundation.gui.menu.ClearMenuPacket;
 import com.bikerboys.schematicannon.foundation.gui.menu.GhostItemSubmitPacket;
 import com.bikerboys.schematicannon.foundation.networking.PacketContext;
@@ -32,6 +33,7 @@ public enum AllPackets {
     BLUEPRINT_COMPLETE_RECIPE(BlueprintAssignCompleteRecipePacket.class, BlueprintAssignCompleteRecipePacket::new, Side.SERVER),
     INSTANT_SCHEMATIC(InstantSchematicPacket.class, InstantSchematicPacket::new, Side.SERVER),
     SYNC_SCHEMATIC(SchematicSyncPacket.class, SchematicSyncPacket::new, Side.SERVER),
+    PLACE_SCHEMATIC_TABLE_ITEM(PlaceSchematicTableItemPacket.class, PlaceSchematicTableItemPacket::new, Side.SERVER),
     SUBMIT_GHOST_ITEM(GhostItemSubmitPacket.class, GhostItemSubmitPacket::new, Side.SERVER),
     CLIPBOARD_EDIT(ClipboardEditPacket.class, ClipboardEditPacket::new, Side.SERVER);
 

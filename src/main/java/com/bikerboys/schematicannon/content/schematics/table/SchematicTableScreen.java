@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 import com.bikerboys.schematicannon.AllBlocks;
+import com.bikerboys.schematicannon.AllPackets;
 import com.bikerboys.schematicannon.SchematicannonClient;
 import com.bikerboys.schematicannon.content.schematics.client.ClientSchematicLoader;
 import com.bikerboys.schematicannon.foundation.gui.AllGuiTextures;
@@ -23,6 +24,7 @@ import com.bikerboys.schematicannon.foundation.utility.CreatePaths;
 import com.bikerboys.schematicannon.foundation.gui.GuiGameElement;
 import net.minecraft.util.Util;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
@@ -222,6 +224,20 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 				schematicsArea.visible = true;
 			}
 		}
+	}
+
+	@Override
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+		double slotX = leftPos + 21;
+		double slotY = topPos + 59;
+		boolean overInputSlot = event.x() >= slotX && event.x() < slotX + 16
+			&& event.y() >= slotY && event.y() < slotY + 16;
+		if (overInputSlot && (event.button() == 0 || event.button() == 1)
+			&& menu.placeCarriedEmptySchematic()) {
+			AllPackets.getChannel().sendToServer(new PlaceSchematicTableItemPacket());
+			return true;
+		}
+		return super.mouseClicked(event, doubleClick);
 	}
 
 	@Override
