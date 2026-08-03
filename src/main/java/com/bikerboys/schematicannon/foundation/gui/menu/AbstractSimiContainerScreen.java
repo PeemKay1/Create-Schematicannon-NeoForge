@@ -28,8 +28,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 public abstract class AbstractSimiContainerScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> {
 
 	protected int windowXOffset, windowYOffset;
-	protected int imageWidth = 176;
-	protected int imageHeight = 166;
+	protected int windowWidth = 176;
+	protected int windowHeight = 166;
 
 	public AbstractSimiContainerScreen(T container, Inventory inv, Component title) {
 		super(container, inv, title);
@@ -39,8 +39,8 @@ public abstract class AbstractSimiContainerScreen<T extends AbstractContainerMen
 	 * This method must be called before {@code super.init()}!
 	 */
 	protected void setWindowSize(int width, int height) {
-		imageWidth = width;
-		imageHeight = height;
+		windowWidth = width;
+		windowHeight = height;
 	}
 
 	/**
@@ -54,8 +54,14 @@ public abstract class AbstractSimiContainerScreen<T extends AbstractContainerMen
 	@Override
 	protected void init() {
 		super.init();
-		leftPos += (176 - imageWidth) / 2 + windowXOffset;
-		topPos += (166 - imageHeight) / 2 + windowYOffset;
+		leftPos += (176 - windowWidth) / 2 + windowXOffset;
+		topPos += (166 - windowHeight) / 2 + windowYOffset;
+	}
+
+	@Override
+	protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeft, int guiTop) {
+		return mouseX < guiLeft || mouseY < guiTop
+			|| mouseX >= guiLeft + windowWidth || mouseY >= guiTop + windowHeight;
 	}
 
 	@Override
@@ -122,7 +128,7 @@ public abstract class AbstractSimiContainerScreen<T extends AbstractContainerMen
 	}
 
 	public int getLeftOfCentered(int textureWidth) {
-		return leftPos - windowXOffset + (imageWidth - textureWidth) / 2;
+		return leftPos - windowXOffset + (windowWidth - textureWidth) / 2;
 	}
 
 	public void renderPlayerInventory(GuiGraphicsExtractor graphics, int x, int y) {
@@ -180,7 +186,7 @@ public abstract class AbstractSimiContainerScreen<T extends AbstractContainerMen
 
 	@Deprecated
 	protected void debugWindowArea(GuiGraphicsExtractor graphics) {
-		graphics.fill(leftPos + imageWidth, topPos + imageHeight, leftPos, topPos, 0xD3D3D3D3);
+		graphics.fill(leftPos + windowWidth, topPos + windowHeight, leftPos, topPos, 0xD3D3D3D3);
 	}
 
 	@Deprecated
