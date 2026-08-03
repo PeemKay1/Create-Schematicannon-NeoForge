@@ -2,6 +2,7 @@ package com.bikerboys.schematicannon.content.schematics.table;
 
 import com.bikerboys.schematicannon.AllItems;
 import com.bikerboys.schematicannon.AllMenuTypes;
+import com.bikerboys.schematicannon.Schematicannon;
 import com.bikerboys.schematicannon.foundation.gui.menu.MenuBase;
 import com.bikerboys.schematicannon.foundation.item.SlotItemHandler;
 
@@ -107,6 +108,11 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 
 	@Override
 	public void clicked(int slotId, int button, ContainerInput input, Player player) {
+		if (slotId == inputSlot.index || getCarried().is(AllItems.EMPTY_SCHEMATIC.get()))
+			Schematicannon.LOGGER.info(
+				"TABLE_SLOT_DIAG menuClick side={} slotId={} inputSlotIndex={} button={} input={} carried={} inputStack={}",
+				player.level().isClientSide() ? "client" : "server", slotId, inputSlot.index, button, input,
+				getCarried(), inputSlot.getItem());
 		if (slotId == inputSlot.index && input == ContainerInput.PICKUP && !inputSlot.hasItem()
 			&& placeCarriedEmptySchematic())
 			return;
@@ -120,6 +126,10 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 			return ItemStack.EMPTY;
 
 		ItemStack stack = clickedSlot.getItem();
+		if (stack.is(AllItems.EMPTY_SCHEMATIC.get()))
+			Schematicannon.LOGGER.info(
+				"TABLE_SLOT_DIAG quickMove side={} index={} inputSlotIndex={} stack={} inputStack={}",
+				player.level().isClientSide() ? "client" : "server", index, inputSlot.index, stack, inputSlot.getItem());
 		ItemStack original = stack.copy();
 		if (index < 2) {
 			if (!moveItemStackTo(stack, 2, slots.size(), false))

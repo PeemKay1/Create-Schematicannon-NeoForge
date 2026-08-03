@@ -9,6 +9,8 @@ import java.util.List;
 import com.google.common.collect.ImmutableList;
 import com.bikerboys.schematicannon.AllBlocks;
 import com.bikerboys.schematicannon.AllPackets;
+import com.bikerboys.schematicannon.AllItems;
+import com.bikerboys.schematicannon.Schematicannon;
 import com.bikerboys.schematicannon.SchematicannonClient;
 import com.bikerboys.schematicannon.content.schematics.client.ClientSchematicLoader;
 import com.bikerboys.schematicannon.foundation.gui.AllGuiTextures;
@@ -232,6 +234,13 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 		double slotY = topPos + 59;
 		boolean overInputSlot = event.x() >= slotX - 4 && event.x() < slotX + 20
 			&& event.y() >= slotY - 4 && event.y() < slotY + 20;
+		boolean relevantItem = menu.getCarried().is(AllItems.EMPTY_SCHEMATIC.get())
+			|| menu.hasEmptySchematicAvailable(minecraft.player);
+		if (overInputSlot || relevantItem)
+			Schematicannon.LOGGER.info(
+				"TABLE_SLOT_DIAG screenClick x={} y={} button={} left={} top={} expectedX={} expectedY={} over={} hoveredIndex={} carried={} available={}",
+				event.x(), event.y(), event.button(), leftPos, topPos, slotX, slotY, overInputSlot,
+				hoveredSlot == null ? -1 : hoveredSlot.index, menu.getCarried(), relevantItem);
 		if (overInputSlot && (event.button() == 0 || event.button() == 1)
 			&& !menu.getSlot(0).hasItem() && menu.hasEmptySchematicAvailable(minecraft.player)) {
 			AllPackets.getChannel().sendToServer(new PlaceSchematicTableItemPacket());
