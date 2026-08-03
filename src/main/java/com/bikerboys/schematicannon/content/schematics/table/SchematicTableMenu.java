@@ -41,18 +41,30 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 	}
 
 	@Override
-	public ItemStack quickMoveStack(Player playerIn, int index) {
+	public ItemStack quickMoveStack(Player player, int index) {
 		Slot clickedSlot = getSlot(index);
 		if (!clickedSlot.hasItem())
 			return ItemStack.EMPTY;
 
 		ItemStack stack = clickedSlot.getItem();
-		if (index < 2)
-			moveItemStackTo(stack, 2, slots.size(), false);
-		else
-			moveItemStackTo(stack, 0, 1, false);
+		ItemStack original = stack.copy();
+		if (index < 2) {
+			if (!moveItemStackTo(stack, 2, slots.size(), false))
+				return ItemStack.EMPTY;
+		} else if (!moveItemStackTo(stack, 0, 1, false)) {
+			return ItemStack.EMPTY;
+		}
 
-		return ItemStack.EMPTY;
+		if (stack.isEmpty())
+			clickedSlot.set(ItemStack.EMPTY);
+		else
+			clickedSlot.setChanged();
+
+		if (stack.getCount() == original.getCount())
+			return ItemStack.EMPTY;
+
+		clickedSlot.onTake(player, stack);
+		return original;
 	}
 
 	@Override
