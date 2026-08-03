@@ -1,6 +1,5 @@
 package com.bikerboys.schematicannon.content.schematics.table;
 
-import com.bikerboys.schematicannon.Schematicannon;
 import com.bikerboys.schematicannon.foundation.networking.PacketContext;
 import com.bikerboys.schematicannon.foundation.networking.SimplePacketBase;
 
@@ -25,11 +24,7 @@ public class PlaceSchematicTableItemPacket extends SimplePacketBase {
 			if (player == null || !(player.containerMenu instanceof SchematicTableMenu menu)
 				|| !menu.stillValid(player))
 				return;
-			boolean available = menu.hasEmptySchematicAvailable(player);
-			boolean placed = menu.placeEmptySchematicFromPlayer(player);
-			Schematicannon.LOGGER.info(
-				"TABLE_SLOT_DIAG packet side=server player={} available={} placed={} carried={} inputStack={}",
-				player.getGameProfile().name(), available, placed, menu.getCarried(), menu.getSlot(0).getItem());
+			menu.placeEmptySchematicFromPlayer(player);
 		});
 		return true;
 	}
