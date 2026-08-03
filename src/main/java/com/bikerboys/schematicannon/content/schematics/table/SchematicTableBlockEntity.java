@@ -2,6 +2,7 @@ package com.bikerboys.schematicannon.content.schematics.table;
 
 import java.util.List;
 
+import com.bikerboys.schematicannon.AllItems;
 import com.bikerboys.schematicannon.foundation.blockEntity.SmartBlockEntity;
 import com.bikerboys.schematicannon.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.bikerboys.schematicannon.foundation.item.ItemHelper;
@@ -40,6 +41,18 @@ public class SchematicTableBlockEntity extends SmartBlockEntity implements MenuP
 		protected void onContentsChanged(int slot) {
 			super.onContentsChanged(slot);
 			setChanged();
+		}
+
+		@Override
+		public boolean isItemValid(int slot, ItemStack stack) {
+			return slot == 0 && (stack.is(AllItems.EMPTY_SCHEMATIC.get())
+				|| stack.is(AllItems.SCHEMATIC_AND_QUILL.get())
+				|| stack.is(AllItems.SCHEMATIC.get()));
+		}
+
+		@Override
+		public int getSlotLimit(int slot) {
+			return 1;
 		}
 	}
 

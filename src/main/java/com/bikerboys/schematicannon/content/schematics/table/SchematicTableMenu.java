@@ -10,6 +10,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -51,6 +52,19 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 
 	public boolean canWrite() {
 		return inputSlot.hasItem() && !outputSlot.hasItem();
+	}
+
+	@Override
+	public void clicked(int slotId, int button, ContainerInput input, Player player) {
+		if (slotId == inputSlot.index && input == ContainerInput.PICKUP && !inputSlot.hasItem()
+			&& getCarried().is(AllItems.EMPTY_SCHEMATIC.get())) {
+			inputSlot.setByPlayer(getCarried().copyWithCount(1));
+			ItemStack remainder = getCarried().copy();
+			remainder.shrink(1);
+			setCarried(remainder);
+			return;
+		}
+		super.clicked(slotId, button, input, player);
 	}
 
 	@Override
@@ -100,8 +114,7 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 		inputSlot = new SlotItemHandler(contentHolder.inventory, 0, 21, 59) {
 			@Override
 			public boolean mayPlace(ItemStack stack) {
-				return stack.is(AllItems.EMPTY_SCHEMATIC.get()) || stack.is(AllItems.SCHEMATIC_AND_QUILL.get())
-						|| stack.is(AllItems.SCHEMATIC.get());
+				return contentHolder.inventory.isItemValid(0, stack);
 			}
 		};
 
