@@ -79,21 +79,42 @@ public class SchematicannonMenu extends MenuBase<SchematicannonBlockEntity> {
 	}
 
 	@Override
-	public ItemStack quickMoveStack(Player playerIn, int index) {
+	public ItemStack quickMoveStack(Player player, int index) {
 		Slot clickedSlot = getSlot(index);
 		if (!clickedSlot.hasItem())
 			return ItemStack.EMPTY;
+
 		ItemStack stack = clickedSlot.getItem();
+		ItemStack original = stack.copy();
 
 		if (index < 5) {
-			moveItemStackTo(stack, 5, slots.size(), false);
+			if (!moveItemStackTo(stack, 5, slots.size(), false))
+				return ItemStack.EMPTY;
 		} else {
-			if (moveItemStackTo(stack, 0, 1, false) || moveItemStackTo(stack, 2, 3, false)
-					|| moveItemStackTo(stack, 4, 5, false))
-				;
+			boolean moved;
+			if (contentHolder.inventory.isItemValid(0, stack))
+				moved = moveItemStackTo(stack, 0, 1, false);
+			else if (contentHolder.inventory.isItemValid(2, stack))
+				moved = moveItemStackTo(stack, 2, 3, false);
+			else if (contentHolder.inventory.isItemValid(4, stack))
+				moved = moveItemStackTo(stack, 4, 5, false);
+			else
+				moved = false;
+
+			if (!moved)
+				return ItemStack.EMPTY;
 		}
 
-		return ItemStack.EMPTY;
+		if (stack.isEmpty())
+			clickedSlot.set(ItemStack.EMPTY);
+		else
+			clickedSlot.setChanged();
+
+		if (stack.getCount() == original.getCount())
+			return ItemStack.EMPTY;
+
+		clickedSlot.onTake(player, stack);
+		return original;
 	}
 
 }

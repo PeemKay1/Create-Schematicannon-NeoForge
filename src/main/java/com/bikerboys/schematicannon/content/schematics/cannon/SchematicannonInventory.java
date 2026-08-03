@@ -25,7 +25,7 @@ public class SchematicannonInventory extends ItemStackHandler {
 	public boolean isItemValid(int slot, ItemStack stack) {
 		switch (slot) {
 		case 0: // Blueprint Slot
-			return stack.is(AllItems.SCHEMATIC.get());
+			return stack.is(AllItems.SCHEMATIC.get()) || stack.is(AllItems.EMPTY_SCHEMATIC.get());
 		case 1: // Blueprint output
 			return false;
 		case 2: // Book input
