@@ -230,10 +230,10 @@ public class SchematicTableScreen extends AbstractSimiContainerScreen<SchematicT
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		double slotX = leftPos + 21;
 		double slotY = topPos + 59;
-		boolean overInputSlot = event.x() >= slotX && event.x() < slotX + 16
-			&& event.y() >= slotY && event.y() < slotY + 16;
+		boolean overInputSlot = event.x() >= slotX - 4 && event.x() < slotX + 20
+			&& event.y() >= slotY - 4 && event.y() < slotY + 20;
 		if (overInputSlot && (event.button() == 0 || event.button() == 1)
-			&& menu.placeCarriedEmptySchematic()) {
+			&& !menu.getSlot(0).hasItem() && menu.hasEmptySchematicAvailable(minecraft.player)) {
 			AllPackets.getChannel().sendToServer(new PlaceSchematicTableItemPacket());
 			return true;
 		}

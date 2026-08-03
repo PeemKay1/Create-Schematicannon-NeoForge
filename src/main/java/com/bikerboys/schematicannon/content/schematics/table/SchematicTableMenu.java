@@ -66,6 +66,45 @@ public class SchematicTableMenu extends MenuBase<SchematicTableBlockEntity> {
 		return true;
 	}
 
+	public boolean hasEmptySchematicAvailable(Player player) {
+		if (getCarried().is(AllItems.EMPTY_SCHEMATIC.get()))
+			return true;
+		Inventory inventory = player.getInventory();
+		for (int slot = 0; slot < inventory.getContainerSize(); slot++)
+			if (inventory.getItem(slot).is(AllItems.EMPTY_SCHEMATIC.get()))
+				return true;
+		return false;
+	}
+
+	public boolean placeEmptySchematicFromPlayer(Player player) {
+		if (inputSlot.hasItem())
+			return false;
+
+		ItemStack source = getCarried();
+		if (source.is(AllItems.EMPTY_SCHEMATIC.get())) {
+			ItemStack remainder = source.copy();
+			remainder.shrink(1);
+			setCarried(remainder);
+		} else {
+			Inventory inventory = player.getInventory();
+			int sourceSlot = -1;
+			for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+				if (!inventory.getItem(slot).is(AllItems.EMPTY_SCHEMATIC.get()))
+					continue;
+				sourceSlot = slot;
+				break;
+			}
+			if (sourceSlot == -1)
+				return false;
+			inventory.removeItem(sourceSlot, 1);
+			inventory.setChanged();
+		}
+
+		inputSlot.setByPlayer(new ItemStack(AllItems.EMPTY_SCHEMATIC.get()));
+		broadcastChanges();
+		return true;
+	}
+
 	@Override
 	public void clicked(int slotId, int button, ContainerInput input, Player player) {
 		if (slotId == inputSlot.index && input == ContainerInput.PICKUP && !inputSlot.hasItem()

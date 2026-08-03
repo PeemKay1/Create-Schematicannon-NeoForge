@@ -24,7 +24,7 @@ public class PlaceSchematicTableItemPacket extends SimplePacketBase {
 			if (player == null || !(player.containerMenu instanceof SchematicTableMenu menu)
 				|| !menu.stillValid(player))
 				return;
-			menu.placeCarriedEmptySchematic();
+			menu.placeEmptySchematicFromPlayer(player);
 		});
 		return true;
 	}
